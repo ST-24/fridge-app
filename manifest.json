@@ -1,0 +1,22 @@
+{
+  "name": "冰箱管家",
+  "short_name": "冰箱管家",
+  "description": "台灣家庭專用冰箱庫存管理 App，格點化視覺介面，零摩擦家庭共用",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#e8edf2",
+  "theme_color": "#1b4332",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

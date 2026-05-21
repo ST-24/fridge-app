@@ -1,0 +1,464 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1b4332">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="?啁拳蝞∪振">
+<link rel="manifest" href="manifest.json">
+<title>?啁拳蝞∪振</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;background:#e8edf2;display:flex;justify-content:center;min-height:100vh}
+.phone{width:100%;max-width:430px;background:#fff;min-height:100vh;position:relative;overflow-x:hidden}
+
+.hd{background:linear-gradient(160deg,#1a392b 0%,#2d6a4f 50%,#52b788 100%);color:#fff;padding:18px 22px 16px;position:relative;overflow:hidden}
+.hd::after{content:"";position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.06);border-radius:50%}
+.hd1{font-size:10px;opacity:0.7;letter-spacing:2px;text-transform:uppercase}
+.hd2{font-size:23px;font-weight:900;margin-top:4px;letter-spacing:1px}
+.hd3{font-size:11px;opacity:0.75;margin-top:5px}
+
+.tabs{display:flex;background:linear-gradient(180deg,#e8f5e9 0%,#f0faf1 100%);border-bottom:1px solid #c8e6c9}
+.tab{flex:1;text-align:center;padding:12px 0;font-size:13.5px;font-weight:700;color:#6b9080;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s}
+.tab.on{color:#1b4332;border-bottom-color:#2d6a4f;background:rgba(255,255,255,0.6)}
+
+.legend{display:flex;justify-content:center;gap:14px;padding:8px 0 4px;font-size:11px;color:#777;background:#fafcfb}
+.legend span{display:flex;align-items:center;gap:3px}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+.stats{display:flex;justify-content:space-around;padding:10px 14px;margin:0 10px;background:linear-gradient(135deg,#f0faf1,#e8f5e9);border-radius:12px;margin-bottom:8px;margin-top:6px}
+.stats .si{text-align:center}
+.stats .sv{font-size:18px;font-weight:900;color:#1b4332}
+.stats .sl{font-size:9.5px;color:#6b9080;margin-top:1px}
+
+.gc{padding:10px 10px 6px}
+.glabel{font-size:10.5px;color:#999;font-weight:600;margin:6px 4px 5px;letter-spacing:0.5px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:7px}
+
+.cell{aspect-ratio:1;border-radius:14px;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;transition:all 0.15s ease;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.cell::after{content:"";position:absolute;top:0;left:0;right:0;height:40%;background:linear-gradient(180deg,rgba(255,255,255,0.25),transparent);border-radius:14px 14px 0 0;pointer-events:none}
+.cell:hover{transform:scale(1.03);box-shadow:0 4px 14px rgba(0,0,0,0.12)}
+.cell:active{transform:scale(0.97)}
+
+.cell.g{background:linear-gradient(160deg,#e8f5e9,#c8e6c9);border:1.5px solid #a5d6a7}
+.cell.y{background:linear-gradient(160deg,#fffde7,#fff9c4);border:1.5px solid #fff176}
+.cell.r{background:linear-gradient(160deg,#ffebee,#ffcdd2);border:1.5px solid #ef9a9a;animation:rp 2s infinite}
+@keyframes rp{0%,100%{box-shadow:0 0 0 rgba(229,57,53,0)}50%{box-shadow:0 0 12px rgba(229,57,53,0.3)}}
+.cell.e{background:linear-gradient(160deg,#f8f8f8,#f0f0f0);border:1.5px dashed #d0d0d0}
+
+.cell .nm{font-size:12.5px;font-weight:700;text-align:center;line-height:1.35;padding:0 5px;word-break:break-all;position:relative;z-index:1}
+.cell .dy{font-size:9.5px;margin-top:3px;color:#888;position:relative;z-index:1}
+.cell .tag{font-size:8.5px;padding:1px 5px;border-radius:10px;margin-top:3px;font-weight:600;position:relative;z-index:1}
+.cell.e .plus{font-size:26px;color:#d0d0d0;line-height:1;position:relative;z-index:1}
+.cell.e .ehint{font-size:8px;color:#d0d0d0;margin-top:3px;position:relative;z-index:1}
+
+/* 頛銝?*/
+.loading{text-align:center;padding:40px;color:#999;font-size:14px}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid #ddd;border-top:3px solid #2d6a4f;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 敶? */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;justify-content:flex-end;backdrop-filter:blur(2px)}
+.overlay.show{display:flex;animation:fo 0.2s ease}
+@keyframes fo{from{opacity:0}to{opacity:1}}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 36px;width:100%;max-width:430px;animation:su 0.3s ease-out;max-height:88vh;overflow-y:auto}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+.modal .mt{font-size:19px;font-weight:800;color:#1b4332;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.mt .x{font-size:26px;color:#bbb;cursor:pointer;line-height:1;padding:0 4px}
+
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:12.5px;color:#666;font-weight:600;margin-bottom:7px}
+.fg input,.fg select{width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:12px;font-size:15px;outline:none;background:#fafafa;transition:all 0.2s;font-family:inherit}
+.fg input:focus,.fg select:focus{border-color:#52b788;background:#fff;box-shadow:0 0 0 3px rgba(82,183,136,0.12)}
+.fh{font-size:10.5px;color:#aaa;margin-top:5px;line-height:1.5}
+
+.btn-p{width:100%;padding:14px;background:linear-gradient(135deg,#1b4332,#2d6a4f,#40916c);color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all 0.2s;box-shadow:0 4px 14px rgba(45,106,79,0.3)}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(45,106,79,0.4)}
+.btn-p:active{transform:translateY(0)}
+
+.dr{padding:11px 0;border-bottom:1px solid #f2f2f2;display:flex;justify-content:space-between;align-items:center}
+.dr .dl{font-size:13px;color:#999}
+.dr .dv{font-size:14px;color:#333;font-weight:700}
+.dr .dv.red{color:#c62828}.dr .dv.orange{color:#f57f17}.dr .dv.green{color:#2e7d32}
+
+.br{display:flex;gap:10px;margin-top:16px}
+.br button{flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.15s}
+.br .b-consume{background:linear-gradient(135deg,#e8f5e9,#c8e6c9);color:#1b4332}
+.br .b-delete{background:linear-gradient(135deg,#ffebee,#ffcdd2);color:#b71c1c}
+
+.bnav{display:flex;border-top:1.5px solid #eee;background:#fff;position:sticky;bottom:0;padding-bottom:env(safe-area-inset-bottom,8px)}
+.bi{flex:1;text-align:center;padding:10px 0 6px;font-size:10px;color:#bbb;cursor:pointer;transition:color 0.2s}
+.bi.on{color:#1b4332;font-weight:700}
+.bi .ic{font-size:20px;display:block;margin-bottom:1px}
+
+.note{background:linear-gradient(135deg,#f0f7f2,#e4f0e8);margin:10px;border-radius:14px;padding:14px 16px;font-size:11.5px;color:#3a6350;line-height:1.7;border:1px solid #c8e6c9}
+.note b{color:#1b4332}
+
+/* 閮剖???*/
+.settings-page{display:none;padding:20px}
+.settings-page.show{display:block}
+.main-page{display:none}
+.main-page.show{display:block}
+
+.setting-group{margin-bottom:20px}
+.setting-group h3{font-size:14px;color:#1b4332;margin-bottom:10px;font-weight:700}
+.setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}
+.setting-item .label{font-size:13.5px;color:#333}
+.setting-item .val{font-size:13px;color:#2d6a4f;font-weight:600}
+.btn-logout{width:100%;padding:13px;background:#fff;color:#c62828;border:2px solid #ffcdd2;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:20px;transition:all 0.2s}
+.btn-logout:hover{background:#ffebee}
+</style>
+</head>
+<body>
+
+<div class="phone" id="app">
+
+  <!-- 銝駁? -->
+  <div class="main-page show" id="mainPage">
+    <!-- ? -->
+    <div class="hd">
+      <div class="hd1">TAIWAN EXCLUSIVE</div>
+      <div class="hd2">?? ?啁拳蝞∪振</div>
+      <div class="hd3">蝞∪末?典振?圈悅??蝞?/div>
+    </div>
+
+    <!-- Tab -->
+    <div class="tabs">
+      <div class="tab on" onclick="switchTab('cold')">?? ?瑁?摰?/div>
+      <div class="tab" onclick="switchTab('frozen')">?? ?瑕?摨?/div>
+      <div class="tab" onclick="switchTab('door')">? ???/div>
+    </div>
+
+    <!-- ?? -->
+    <div class="legend">
+      <span><i style="background:#a5d6a7"></i>摰 3憭?</span>
+      <span><i style="background:#fff176"></i>?單? ??憭?/span>
+      <span><i style="background:#ef9a9a"></i>?? 敹思?嚗?/span>
+    </div>
+
+    <!-- 蝯梯? -->
+    <div class="stats">
+      <div class="si"><div class="sv" id="cntTotal">0</div><div class="sl">蝮質?</div></div>
+      <div class="si"><div class="sv" style="color:#f57f17" id="cntYellow">0</div><div class="sl">?單?</div></div>
+      <div class="si"><div class="sv" style="color:#e53935" id="cntRed">0</div><div class="sl">??</div></div>
+      <div class="si"><div class="sv" style="color:#2e7d32" id="cntGreen">0</div><div class="sl">摰</div></div>
+    </div>
+
+    <!-- ?潮?? -->
+    <div class="gc" id="gridCold">
+      <div class="glabel">?? ?瑁?摰?繚 蝚?1~2 撅?/div>
+      <div class="grid" id="gridColdInner"></div>
+    </div>
+    <div class="gc" id="gridFrozen" style="display:none">
+      <div class="glabel">?? ?瑕?摨?繚 蝚?1~2 撅?/div>
+      <div class="grid" id="gridFrozenInner"></div>
+    </div>
+    <div class="gc" id="gridDoor" style="display:none">
+      <div class="glabel">? ?????/div>
+      <div class="grid" id="gridDoorInner"></div>
+    </div>
+
+    <div class="note">
+      ? <b>雿輻隤芣?</b><br>
+      ??暺蔗?脫暺???底??br>
+      ??暺??征?潮?敹恍憓?br>
+      ??蝝 = 撌脤????芸??? ?<br>
+      ??擐活雿輻隢??喋身摰?摰?Google Sheet
+    </div>
+  </div>
+
+  <!-- 閮剖???-->
+  <div class="settings-page" id="settingsPage">
+    <div class="hd">
+      <div class="hd1">SETTINGS</div>
+      <div class="hd2">?? 閮剖?</div>
+      <div class="hd3">蝬??函? Google 閰衣?銵?/div>
+    </div>
+    <div style="padding:20px">
+      <div class="setting-group">
+        <h3>?? Google 閰衣?銵函???/h3>
+        <div class="setting-item">
+          <span class="label">蝬????/span>
+          <span class="val" id="sheetStatus">?芰?摰?/span>
+        </div>
+        <div class="setting-item">
+          <span class="label">閰衣?銵典?蝔?/span>
+          <span class="val" id="sheetName">--</span>
+        </div>
+        <button class="btn-p" onclick="initSheet()" style="margin-top:12px">?? ????/ 蝬?閰衣?銵?/button>
+      </div>
+      <div class="setting-group">
+        <h3>? ??鈭箏?蝔?/h3>
+        <div class="fg" style="margin-bottom:0">
+          <input type="text" id="operatorName" placeholder="靘?嚗直慦賬?詻?摮? value="慦賢直" onchange="saveOperator()">
+          <div class="fh">? ?啣?/瘨???????迨?迂</div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <h3>?? ?身靽?憭拇</h3>
+        <div class="fg" style="margin-bottom:0">
+          <input type="number" id="defaultDays" value="7" min="1" max="365" onchange="saveDefaultDays()">
+          <div class="fh">? ?芸‵靽??交???蝟餌絞?芸?閮剔甇文予?詨??唳?</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="resetSheet()">??儭??身閰衣?銵券??</button>
+    </div>
+  </div>
+
+  <!-- 摨撠 -->
+  <div class="bnav">
+    <div class="bi on" onclick="showPage('main')"><span class="ic">??</span>?啁拳</div>
+    <div class="bi" onclick="showPage('settings')"><span class="ic">??</span>閮剖?</div>
+  </div>
+</div>
+
+<!-- 敶?嚗憓???-->
+<div class="overlay" id="modalAdd">
+  <div class="modal">
+    <div class="mt">嚗??啣?憌? <span class="x" onclick="closeModal('modalAdd')">??/span></div>
+    <div class="fg">
+      <label>?? 憌??迂 <span style="color:#e53935">*</span></label>
+      <input type="text" id="inputName" placeholder="靘?嚗悅憟嗚?暻?????..">
+    </div>
+    <div class="fg">
+      <label>?? 靽???嚗憛恬?</label>
+      <input type="date" id="inputDate">
+      <div class="fh">? 銝‵?店嚗頂蝯望??芸?閮剖? <span id="fhDefaultDays">7</span> 憭拙??箏?</div>
+    </div>
+    <div class="fg">
+      <label>?? ?曄蔭雿蔭</label>
+      <select id="inputZone">
+        <option value="cold">?? ?瑁?摰?/option>
+        <option value="frozen">?? ?瑕?摨?/option>
+        <option value="door">? ?????/option>
+      </select>
+    </div>
+    <button class="btn-p" onclick="doAdd()">??蝣箄??啣?</button>
+  </div>
+</div>
+
+<!-- 敶?嚗??底??-->
+<div class="overlay" id="modalDetail">
+  <div class="modal">
+    <div class="mt" id="detailTitle">閰單? <span class="x" onclick="closeModal('modalDetail')">??/span></div>
+    <div id="detailContent"></div>
+    <div class="br">
+      <button class="b-consume" onclick="doConsume()">??撌脫???/button>
+      <button class="b-delete" onclick="doDelete()">??儭??芷</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 閮剖??嚗?撠??寧雯??踵????GAS Web App 蝬脣?
+// ============================================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxmoehjgtd4pQH3KayjVQysUakbz1BrRcy9m-0Rn5UwgzceR0S0fh-dnDz12-Muypc/exec";
+
+var currentTab = 'cold';
+var currentGridIndex = 0;
+var currentItemId = '';
+var allItems = [];
+
+/* ========== ????========== */
+document.addEventListener('DOMContentLoaded', function() {
+  loadOperator();
+  loadDefaultDays();
+  // ?湔 FH ?身憭拇憿舐內
+  document.getElementById('fhDefaultDays').textContent = document.getElementById('defaultDays').value;
+  // ?岫頛鞈?
+  setTimeout(function() {
+    if (localStorage.getItem('gas_url')) {
+      loadData();
+    }
+  }, 300);
+});
+
+/* ========== ??? ========== */
+function showPage(page) {
+  document.getElementById('mainPage').classList.remove('show');
+  document.getElementById('settingsPage').classList.remove('show');
+  document.querySelectorAll('.bi').forEach(function(b){ b.classList.remove('on'); });
+  if (page === 'main') {
+    document.getElementById('mainPage').classList.add('show');
+    document.querySelectorAll('.bi')[0].classList.add('on');
+    loadData();
+  } else {
+    document.getElementById('settingsPage').classList.add('show');
+    document.querySelectorAll('.bi')[1].classList.add('on');
+  }
+}
+
+/* ========== Tab ?? ========== */
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('gridCold').style.display   = tab === 'cold'   ? 'block' : 'none';
+  document.getElementById('gridFrozen').style.display  = tab === 'frozen' ? 'block' : 'none';
+  document.getElementById('gridDoor').style.display    = tab === 'door'   ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach(function(t,i){
+    var names = ['cold','frozen','door'];
+    t.className = 'tab' + (names[i]===tab?' on':'' );
+  });
+}
+
+/* ========== 頛鞈? ========== */
+function loadData() {
+  if (!GAS_URL) {
+    alert('?emo 璅∪??n隢??喋身摰?????Google 閰衣?銵剁?\n\n嚗祕?蝙?冽?嚗迨????撖怠?函? Google Sheet嚗?);
+    closeModal('modalAdd');
+    return;
+  }
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'addItem',
+      itemName: name,
+      gridIndex: currentGridIndex,
+      userExpiry: date || '',
+      operator: operator,
+      zone: zone
+    }),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    if (res.status === 'ok') {
+      closeModal('modalAdd');
+      loadData();
+    } else {
+      alert('?啣?憭望?嚗? + (res.message||'?芰?航炊'));
+    }
+  })
+  .catch(function(err){ alert('蝬脰楝?航炊嚗? + err); });
+}
+
+/* ========== ??閰單? ========== */
+function openDetail(item) {
+  currentItemId = item.id;
+  var title = document.getElementById('detailTitle');
+  title.innerHTML = escapeHtml(item.itemName) + ' <span class="x" onclick="closeModal(\'modalDetail\')">??/span>';
+
+  var today = new Date(); today.setHours(0,0,0,0);
+  var ed = new Date(item.expiryDate); ed.setHours(0,0,0,0);
+  var diff = Math.ceil((ed - today) / (1000*60*60*24));
+  var statusClass = diff <= 0 ? 'red' : diff <= 3 ? 'orange' : 'green';
+  var statusText  = diff <= 0 ? '撌脤????' : diff <= 3 ? '?單?嚗?敹恍?????' : '靽?摰 ??;
+  var dayText = diff < 0 ? '撌脤???' + Math.abs(diff) + ' 憭? : diff + ' 憭?;
+
+  var html = '';
+  html += '<div class="dr"><span class="dl">?? ?曄蔭雿蔭</span><span class="dv" id="dvZone">' + (item.gridIndex<=12?'?瑁?摰?:item.gridIndex<=21?'?瑕?摨?:'?????) + '</span></div>';
+  html += '<div class="dr"><span class="dl">?? ?駁??交?</span><span class="dv">' + (item.inputDate||'--') + '</span></div>';
+  html += '<div class="dr"><span class="dl">???唳??交?</span><span class="dv">' + (item.expiryDate||'--') + '</span></div>';
+  html += '<div class="dr"><span class="dl">? ?拚?憭拇</span><span class="dv ' + statusClass + '">' + dayText + '</span></div>';
+  html += '<div class="dr"><span class="dl">?? ???/span><span class="dv ' + statusClass + '">' + statusText + '</span></div>';
+  html += '<div class="dr"><span class="dl">? ??鈭?/span><span class="dv">' + escapeHtml(item.operatorNote||'--') + '</span></div>';
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('modalDetail').classList.add('show');
+}
+
+/* ========== 璅?瘨?========== */
+function doConsume() {
+  if (!GAS_URL) {
+    alert('?emo 璅∪?????憪? Google 閰衣?銵剁?');
+    return;
+  }
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'deleteItem', id: currentItemId }),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    closeModal('modalDetail');
+    if (res.status === 'ok') loadData();
+    else alert('??憭望?嚗? + (res.message||''));
+  })
+  .catch(function(err){ alert('蝬脰楝?航炊嚗? + err); });
+}
+
+/* ========== ??敶? ========== */
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+/* ========== ???岫蝞” ========== */
+function initSheet() {
+  if (!GAS_URL || GAS_URL.indexOf('##') === 0) {
+    alert('隢?閮剖? GAS_URL嚗n\n隢 Google Apps Script ?函蔡 Web App嚗n銝血?蝬脣?憛怠 index.html ??GAS_URL 霈??);
+    return;
+  }
+  if (!confirm('?喳?????Google 閰衣?銵剁??亙歇摮??仿??嚗?蝣箏?嚗?)) return;
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'initSheet' }),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    if (res.status === 'ok') {
+      alert('????????\n\n隢炎?交??Google Drive嚗n???箇?蝞梁恣摰跛鞈?摨怒岫蝞”??);
+      loadData();
+    } else {
+      alert('???仃??' + (res.message||''));
+    }
+  })
+  .catch(function(err){
+    alert('蝬脰楝?航炊嚗? + err + '\n\n隢Ⅱ隤?\n1. GAS_URL ?臬甇?Ⅱ\n2. GAS ?臬撌脰身摰遙雿犖??????);
+  });
+}
+
+/* ========== ??鈭箄身摰?========== */
+function loadOperator() {
+  var op = localStorage.getItem('operator');
+  if (op) document.getElementById('operatorName').value = op;
+}
+function saveOperator() {
+  var op = document.getElementById('operatorName').value.trim();
+  localStorage.setItem('operator', op || '慦賢直');
+}
+
+/* ========== ?身憭拇 ========== */
+function loadDefaultDays() {
+  var d = localStorage.getItem('defaultDays');
+  if (d) document.getElementById('defaultDays').value = d;
+}
+function saveDefaultDays() {
+  var d = document.getElementById('defaultDays').value;
+  localStorage.setItem('defaultDays', d);
+  document.getElementById('fhDefaultDays').textContent = d;
+}
+
+/* ========== 撌亙?賢? ========== */
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showLoading() {
+  ['gridColdInner','gridFrozenInner','gridDoorInner'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = '<div class="loading"><div class="spinner"></div>頛銝?..</div>';
+  });
+}
+
+function resetSheet() {
+  if (confirm('蝣箏?閬?閮剛岫蝞”???閮剖???\n嚗???斗??Google Sheet 鞈?嚗?)) {
+    localStorage.removeItem('gas_url');
+    alert('撌脤?閮哨?隢??啗身摰?GAS_URL??);
+  }
+}
+
+/* ========== Service Worker 閮餃? ========== */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(e) {
+    console.log('SW 閮餃?憭望?嚗?, e);
+  });
+}
+</script>
+</body>
+</html>
