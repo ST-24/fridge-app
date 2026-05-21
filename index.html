@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#1b4332">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="?啁拳蝞∪振">
+<meta name="apple-mobile-web-app-title" content="冰箱管家">
 <link rel="manifest" href="manifest.json">
-<title>?啁拳蝞∪振</title>
+<title>冰箱管家</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;background:#e8edf2;display:flex;justify-content:center;min-height:100vh}
@@ -28,234 +28,124 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 .legend span{display:flex;align-items:center;gap:3px}
 .legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
 
-.stats{display:flex;justify-content:space-around;padding:10px 14px;margin:0 10px;background:linear-gradient(135deg,#f0faf1,#e8f5e9);border-radius:12px;margin-bottom:8px;margin-top:6px}
-.stats .si{text-align:center}
-.stats .sv{font-size:18px;font-weight:900;color:#1b4332}
-.stats .sl{font-size:9.5px;color:#6b9080;margin-top:1px}
+.grid-wrap{padding:10px;display:none}
+.grid-wrap.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px}
+.cell{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-align:center;padding:4px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;position:relative;word-break:break-all;line-height:1.25;min-height:70px}
+.cell:active{transform:scale(0.93)}
+.cell.empty{background:#f5f5f5;color:#bbb;border:2px dashed #ddd}
+.cell.green{background:linear-gradient(135deg,#d8f3dc,#b7e4c7);color:#1b4332;border:2px solid #95d5b2}
+.cell.yellow{background:linear-gradient(135deg,#fff3cd,#ffe69c);color:#664d03;border:2px solid #ffc107}
+.cell.red{background:linear-gradient(135deg,#ffccd5,#ffa8b0);color:#900c20;border:2px solid #ef476f}
+.cell .days-badge{position:absolute;top:-2px;right:-2px;font-size:9px;font-weight:800;padding:2px 5px;border-radius:8px;color:#fff;min-width:22px;text-align:center}
+.cell.green .days-badge{background:#2d6a4f}
+.cell.yellow .days-badge{background:#e67700}
+.cell.red .days-badge{background:#c1121f}
 
-.gc{padding:10px 10px 6px}
-.glabel{font-size:10.5px;color:#999;font-weight:600;margin:6px 4px 5px;letter-spacing:0.5px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:7px}
+.stats{display:flex;justify-content:center;gap:16px;padding:10px 0 6px;font-size:12px;color:#555;background:#fafcfb}
+.stat{text-align:center}
+.stat .num{font-size:22px;font-weight:900}
+.stat .label{font-size:10px;color:#888;margin-top:1px}
+.stat.safe .num{color:#2d6a4f}
+.stat.warn .num{color:#e67700}
+.stat.danger .num{color:#c1121f}
+.stat.total .num{color:#555}
 
-.cell{aspect-ratio:1;border-radius:14px;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;transition:all 0.15s ease;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
-.cell::after{content:"";position:absolute;top:0;left:0;right:0;height:40%;background:linear-gradient(180deg,rgba(255,255,255,0.25),transparent);border-radius:14px 14px 0 0;pointer-events:none}
-.cell:hover{transform:scale(1.03);box-shadow:0 4px 14px rgba(0,0,0,0.12)}
-.cell:active{transform:scale(0.97)}
+.footer-note{text-align:center;font-size:10px;color:#aaa;padding:8px 0 14px;background:#fafcfb}
 
-.cell.g{background:linear-gradient(160deg,#e8f5e9,#c8e6c9);border:1.5px solid #a5d6a7}
-.cell.y{background:linear-gradient(160deg,#fffde7,#fff9c4);border:1.5px solid #fff176}
-.cell.r{background:linear-gradient(160deg,#ffebee,#ffcdd2);border:1.5px solid #ef9a9a;animation:rp 2s infinite}
-@keyframes rp{0%,100%{box-shadow:0 0 0 rgba(229,57,53,0)}50%{box-shadow:0 0 12px rgba(229,57,53,0.3)}}
-.cell.e{background:linear-gradient(160deg,#f8f8f8,#f0f0f0);border:1.5px dashed #d0d0d0}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;width:88%;max-width:340px;padding:24px 20px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.modal h3{font-size:18px;margin-bottom:14px;color:#1b4332}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;font-weight:700;color:#555;margin-bottom:4px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.form-group input:focus,.form-group select:focus{border-color:#52b788}
+.btn-row{display:flex;gap:8px;margin-top:16px}
+.btn{flex:1;padding:11px 0;border-radius:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all 0.2s}
+.btn-primary{background:linear-gradient(135deg,#2d6a4f,#52b788);color:#fff}
+.btn-danger{background:linear-gradient(135deg,#c1121f,#ef476f);color:#fff}
+.btn-cancel{background:#eee;color:#666}
+.btn:active{opacity:0.8}
 
-.cell .nm{font-size:12.5px;font-weight:700;text-align:center;line-height:1.35;padding:0 5px;word-break:break-all;position:relative;z-index:1}
-.cell .dy{font-size:9.5px;margin-top:3px;color:#888;position:relative;z-index:1}
-.cell .tag{font-size:8.5px;padding:1px 5px;border-radius:10px;margin-top:3px;font-weight:600;position:relative;z-index:1}
-.cell.e .plus{font-size:26px;color:#d0d0d0;line-height:1;position:relative;z-index:1}
-.cell.e .ehint{font-size:8px;color:#d0d0d0;margin-top:3px;position:relative;z-index:1}
+.fab{position:fixed;bottom:20px;right:50%;transform:translateX(215px);width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2d6a4f,#52b788);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(45,106,79,0.35);cursor:pointer;z-index:100;border:none;outline:none}
+.fab:active{transform:translateX(215px) scale(0.92)}
 
-/* 頛銝?*/
-.loading{text-align:center;padding:40px;color:#999;font-size:14px}
-.spinner{display:inline-block;width:20px;height:20px;border:3px solid #ddd;border-top:3px solid #2d6a4f;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px}
+.loading{text-align:center;padding:40px 0;color:#999;font-size:13px}
+.loading .spinner{width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:#52b788;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* 敶? */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;justify-content:flex-end;backdrop-filter:blur(2px)}
-.overlay.show{display:flex;animation:fo 0.2s ease}
-@keyframes fo{from{opacity:0}to{opacity:1}}
-.modal{background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 36px;width:100%;max-width:430px;animation:su 0.3s ease-out;max-height:88vh;overflow-y:auto}
-@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
-
-.modal .mt{font-size:19px;font-weight:800;color:#1b4332;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.mt .x{font-size:26px;color:#bbb;cursor:pointer;line-height:1;padding:0 4px}
-
-.fg{margin-bottom:16px}
-.fg label{display:block;font-size:12.5px;color:#666;font-weight:600;margin-bottom:7px}
-.fg input,.fg select{width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:12px;font-size:15px;outline:none;background:#fafafa;transition:all 0.2s;font-family:inherit}
-.fg input:focus,.fg select:focus{border-color:#52b788;background:#fff;box-shadow:0 0 0 3px rgba(82,183,136,0.12)}
-.fh{font-size:10.5px;color:#aaa;margin-top:5px;line-height:1.5}
-
-.btn-p{width:100%;padding:14px;background:linear-gradient(135deg,#1b4332,#2d6a4f,#40916c);color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all 0.2s;box-shadow:0 4px 14px rgba(45,106,79,0.3)}
-.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(45,106,79,0.4)}
-.btn-p:active{transform:translateY(0)}
-
-.dr{padding:11px 0;border-bottom:1px solid #f2f2f2;display:flex;justify-content:space-between;align-items:center}
-.dr .dl{font-size:13px;color:#999}
-.dr .dv{font-size:14px;color:#333;font-weight:700}
-.dr .dv.red{color:#c62828}.dr .dv.orange{color:#f57f17}.dr .dv.green{color:#2e7d32}
-
-.br{display:flex;gap:10px;margin-top:16px}
-.br button{flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.15s}
-.br .b-consume{background:linear-gradient(135deg,#e8f5e9,#c8e6c9);color:#1b4332}
-.br .b-delete{background:linear-gradient(135deg,#ffebee,#ffcdd2);color:#b71c1c}
-
-.bnav{display:flex;border-top:1.5px solid #eee;background:#fff;position:sticky;bottom:0;padding-bottom:env(safe-area-inset-bottom,8px)}
-.bi{flex:1;text-align:center;padding:10px 0 6px;font-size:10px;color:#bbb;cursor:pointer;transition:color 0.2s}
-.bi.on{color:#1b4332;font-weight:700}
-.bi .ic{font-size:20px;display:block;margin-bottom:1px}
-
-.note{background:linear-gradient(135deg,#f0f7f2,#e4f0e8);margin:10px;border-radius:14px;padding:14px 16px;font-size:11.5px;color:#3a6350;line-height:1.7;border:1px solid #c8e6c9}
-.note b{color:#1b4332}
-
-/* 閮剖???*/
-.settings-page{display:none;padding:20px}
-.settings-page.show{display:block}
-.main-page{display:none}
-.main-page.show{display:block}
-
-.setting-group{margin-bottom:20px}
-.setting-group h3{font-size:14px;color:#1b4332;margin-bottom:10px;font-weight:700}
-.setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}
-.setting-item .label{font-size:13.5px;color:#333}
-.setting-item .val{font-size:13px;color:#2d6a4f;font-weight:600}
-.btn-logout{width:100%;padding:13px;background:#fff;color:#c62828;border:2px solid #ffcdd2;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:20px;transition:all 0.2s}
-.btn-logout:hover{background:#ffebee}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:2000;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
 </style>
 </head>
 <body>
 
-<div class="phone" id="app">
-
-  <!-- 銝駁? -->
-  <div class="main-page show" id="mainPage">
-    <!-- ? -->
-    <div class="hd">
-      <div class="hd1">TAIWAN EXCLUSIVE</div>
-      <div class="hd2">?? ?啁拳蝞∪振</div>
-      <div class="hd3">蝞∪末?典振?圈悅??蝞?/div>
-    </div>
-
-    <!-- Tab -->
-    <div class="tabs">
-      <div class="tab on" onclick="switchTab('cold')">?? ?瑁?摰?/div>
-      <div class="tab" onclick="switchTab('frozen')">?? ?瑕?摨?/div>
-      <div class="tab" onclick="switchTab('door')">? ???/div>
-    </div>
-
-    <!-- ?? -->
-    <div class="legend">
-      <span><i style="background:#a5d6a7"></i>摰 3憭?</span>
-      <span><i style="background:#fff176"></i>?單? ??憭?/span>
-      <span><i style="background:#ef9a9a"></i>?? 敹思?嚗?/span>
-    </div>
-
-    <!-- 蝯梯? -->
-    <div class="stats">
-      <div class="si"><div class="sv" id="cntTotal">0</div><div class="sl">蝮質?</div></div>
-      <div class="si"><div class="sv" style="color:#f57f17" id="cntYellow">0</div><div class="sl">?單?</div></div>
-      <div class="si"><div class="sv" style="color:#e53935" id="cntRed">0</div><div class="sl">??</div></div>
-      <div class="si"><div class="sv" style="color:#2e7d32" id="cntGreen">0</div><div class="sl">摰</div></div>
-    </div>
-
-    <!-- ?潮?? -->
-    <div class="gc" id="gridCold">
-      <div class="glabel">?? ?瑁?摰?繚 蝚?1~2 撅?/div>
-      <div class="grid" id="gridColdInner"></div>
-    </div>
-    <div class="gc" id="gridFrozen" style="display:none">
-      <div class="glabel">?? ?瑕?摨?繚 蝚?1~2 撅?/div>
-      <div class="grid" id="gridFrozenInner"></div>
-    </div>
-    <div class="gc" id="gridDoor" style="display:none">
-      <div class="glabel">? ?????/div>
-      <div class="grid" id="gridDoorInner"></div>
-    </div>
-
-    <div class="note">
-      ? <b>雿輻隤芣?</b><br>
-      ??暺蔗?脫暺???底??br>
-      ??暺??征?潮?敹恍憓?br>
-      ??蝝 = 撌脤????芸??? ?<br>
-      ??擐活雿輻隢??喋身摰?摰?Google Sheet
-    </div>
+<div class="phone">
+  <div class="hd">
+    <div class="hd1">TAIWAN EXCLUSIVE</div>
+    <div class="hd2">冰箱管家</div>
+    <div class="hd3">格點視覺化列表 · 零摩擦家庭共用</div>
   </div>
 
-  <!-- 閮剖???-->
-  <div class="settings-page" id="settingsPage">
-    <div class="hd">
-      <div class="hd1">SETTINGS</div>
-      <div class="hd2">?? 閮剖?</div>
-      <div class="hd3">蝬??函? Google 閰衣?銵?/div>
-    </div>
-    <div style="padding:20px">
-      <div class="setting-group">
-        <h3>?? Google 閰衣?銵函???/h3>
-        <div class="setting-item">
-          <span class="label">蝬????/span>
-          <span class="val" id="sheetStatus">?芰?摰?/span>
-        </div>
-        <div class="setting-item">
-          <span class="label">閰衣?銵典?蝔?/span>
-          <span class="val" id="sheetName">--</span>
-        </div>
-        <button class="btn-p" onclick="initSheet()" style="margin-top:12px">?? ????/ 蝬?閰衣?銵?/button>
-      </div>
-      <div class="setting-group">
-        <h3>? ??鈭箏?蝔?/h3>
-        <div class="fg" style="margin-bottom:0">
-          <input type="text" id="operatorName" placeholder="靘?嚗直慦賬?詻?摮? value="慦賢直" onchange="saveOperator()">
-          <div class="fh">? ?啣?/瘨???????迨?迂</div>
-        </div>
-      </div>
-      <div class="setting-group">
-        <h3>?? ?身靽?憭拇</h3>
-        <div class="fg" style="margin-bottom:0">
-          <input type="number" id="defaultDays" value="7" min="1" max="365" onchange="saveDefaultDays()">
-          <div class="fh">? ?芸‵靽??交???蝟餌絞?芸?閮剔甇文予?詨??唳?</div>
-        </div>
-      </div>
-      <button class="btn-logout" onclick="resetSheet()">??儭??身閰衣?銵券??</button>
-    </div>
+  <div class="tabs">
+    <div class="tab on" data-tab="cold" onclick="switchTab('cold')">冷藏室</div>
+    <div class="tab" data-tab="freeze" onclick="switchTab('freeze')">冷凍庫</div>
+    <div class="tab" data-tab="door" onclick="switchTab('door')">門片櫃架</div>
   </div>
 
-  <!-- 摨撠 -->
-  <div class="bnav">
-    <div class="bi on" onclick="showPage('main')"><span class="ic">??</span>?啁拳</div>
-    <div class="bi" onclick="showPage('settings')"><span class="ic">??</span>閮剖?</div>
+  <div class="legend">
+    <span><i style="background:#4CAF50"></i>安全 >3天</span>
+    <span><i style="background:#FFC107"></i>即期 1~3天</span>
+    <span><i style="background:#ef476f"></i>過期 ≤0天</span>
   </div>
+
+  <div id="grid-cold" class="grid-wrap active"><div class="grid" id="g-cold"></div></div>
+  <div id="grid-freeze" class="grid-wrap"><div class="grid" id="g-freeze"></div></div>
+  <div id="grid-door" class="grid-wrap"><div class="grid" id="g-door"></div></div>
+
+  <div class="stats">
+    <div class="stat safe"><div class="num" id="stat-safe">0</div><div class="label">安全</div></div>
+    <div class="stat warn"><div class="num" id="stat-warn">0</div><div class="label">即期</div></div>
+    <div class="stat danger"><div class="num" id="stat-danger">0</div><div class="label">過期</div></div>
+    <div class="stat total"><div class="num" id="stat-total">0</div><div class="label">總數</div></div>
+  </div>
+
+  <div class="footer-note">點擊格點可新增 / 編輯 / 消耗食材</div>
 </div>
 
-<!-- 敶?嚗憓???-->
-<div class="overlay" id="modalAdd">
+<button class="fab" onclick="openAddModal()">+</button>
+
+<div class="modal-overlay" id="modal">
   <div class="modal">
-    <div class="mt">嚗??啣?憌? <span class="x" onclick="closeModal('modalAdd')">??/span></div>
-    <div class="fg">
-      <label>?? 憌??迂 <span style="color:#e53935">*</span></label>
-      <input type="text" id="inputName" placeholder="靘?嚗悅憟嗚?暻?????..">
+    <h3 id="modal-title">新增食材</h3>
+    <div class="form-group">
+      <label>食材名稱</label>
+      <input type="text" id="m-item" placeholder="例如：鮮奶、高麗菜、雞胸肉">
     </div>
-    <div class="fg">
-      <label>?? 靽???嚗憛恬?</label>
-      <input type="date" id="inputDate">
-      <div class="fh">? 銝‵?店嚗頂蝯望??芸?閮剖? <span id="fhDefaultDays">7</span> 憭拙??箏?</div>
-    </div>
-    <div class="fg">
-      <label>?? ?曄蔭雿蔭</label>
-      <select id="inputZone">
-        <option value="cold">?? ?瑁?摰?/option>
-        <option value="frozen">?? ?瑕?摨?/option>
-        <option value="door">? ?????/option>
+    <div class="form-group">
+      <label>區域</label>
+      <select id="m-zone">
+        <option value="cold">冷藏室</option>
+        <option value="freeze">冷凍庫</option>
+        <option value="door">門片櫃架</option>
       </select>
     </div>
-    <button class="btn-p" onclick="doAdd()">??蝣箄??啣?</button>
-  </div>
-</div>
-
-<!-- 敶?嚗??底??-->
-<div class="overlay" id="modalDetail">
-  <div class="modal">
-    <div class="mt" id="detailTitle">閰單? <span class="x" onclick="closeModal('modalDetail')">??/span></div>
-    <div id="detailContent"></div>
-    <div class="br">
-      <button class="b-consume" onclick="doConsume()">??撌脫???/button>
-      <button class="b-delete" onclick="doDelete()">??儭??芷</button>
+    <div class="form-group">
+      <label>到期日 (留空=自動計算)</label>
+      <input type="date" id="m-expiry">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="saveItem()">儲存</button>
+      <button class="btn btn-danger" id="modal-del-btn" style="display:none" onclick="deleteItem()">刪除</button>
     </div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-// ============================================================
-// 閮剖??嚗?撠??寧雯??踵????GAS Web App 蝬脣?
-// ============================================================
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxmoehjgtd4pQH3KayjVQysUakbz1BrRcy9m-0Rn5UwgzceR0S0fh-dnDz12-Muypc/exec";
 
 var currentTab = 'cold';
@@ -263,202 +153,265 @@ var currentGridIndex = 0;
 var currentItemId = '';
 var allItems = [];
 
-/* ========== ????========== */
-document.addEventListener('DOMContentLoaded', function() {
-  loadOperator();
-  loadDefaultDays();
-  // ?湔 FH ?身憭拇憿舐內
-  document.getElementById('fhDefaultDays').textContent = document.getElementById('defaultDays').value;
-  // ?岫頛鞈?
-  setTimeout(function() {
-    if (localStorage.getItem('gas_url')) {
-      loadData();
-    }
-  }, 300);
-});
+// Taiwan food defaults
+const FOOD_DEFAULTS = {"高麗菜": {"cold": 7, "freeze": null}, "空心菜": {"cold": 3, "freeze": null}, "青江菜": {"cold": 4, "freeze": null}, "花椰菜": {"cold": 5, "freeze": null}, "白菜": {"cold": 7, "freeze": null}, "菠菜": {"cold": 5, "freeze": null}, "花瓜": {"cold": 4, "freeze": null}, "苞蔔菜": {"cold": 7, "freeze": null}, "絲絲菜": {"cold": 3, "freeze": null}, "花生芽": {"cold": 5, "freeze": null}, "玉米筍": {"cold": 4, "freeze": null}, "蒜苗": {"cold": 10, "freeze": null}, "蔥": {"cold": 14, "freeze": null}, "薑": {"cold": 14, "freeze": null}, "菇": {"cold": 7, "freeze": null}, "紅蘿蔔": {"cold": 14, "freeze": null}, "黃瓜": {"cold": 10, "freeze": null}, "西瓜": {"cold": 7, "freeze": null}, "豌豆": {"cold": 5, "freeze": null}, "穀類": {"cold": 30, "freeze": 180}, "鮮奶": {"cold": 7, "freeze": 30}, "優酪乳": {"cold": 7, "freeze": 30}, "雞蛋": {"cold": 21, "freeze": null}, "豆腐": {"cold": 5, "freeze": 30}, "豆漿": {"cold": 3, "freeze": 60}, "豆腐皮": {"cold": 7, "freeze": 90}, "臭豆腐": {"cold": 365, "freeze": 365}, "豬肉絲": {"cold": 2, "freeze": 30}, "雞胸肉": {"cold": 2, "freeze": 30}, "緊肉片": {"cold": 2, "freeze": 120}, "牛排": {"cold": 2, "freeze": 90}, "里肌肉": {"cold": 2, "freeze": 90}, "鯖魚": {"cold": 1, "freeze": 90}, "蟹管": {"cold": 1, "freeze": 90}, "蝦子": {"cold": 1, "freeze": 90}, "香腸": {"cold": 14, "freeze": 60}, "貢丸": {"cold": 14, "freeze": 60}, "拉麵": {"cold": 3, "freeze": 90}, "麵條": {"cold": 3, "freeze": 180}, "餐包": {"cold": 3, "freeze": 90}, "沙茶醬": {"cold": 365, "freeze": 365}, "胡椒粉": {"cold": 365, "freeze": 365}, "醬油": {"cold": 365, "freeze": 365}, "奶油": {"cold": 14, "freeze": 120}, "蜜餞": {"cold": 14, "freeze": 180}, "布丁": {"cold": 14, "freeze": 90}, "養樂多": {"cold": 365, "freeze": 365}, "果醬": {"cold": 365, "freeze": 365}, "果凍": {"cold": 7, "freeze": 180}};
 
-/* ========== ??? ========== */
-function showPage(page) {
-  document.getElementById('mainPage').classList.remove('show');
-  document.getElementById('settingsPage').classList.remove('show');
-  document.querySelectorAll('.bi').forEach(function(b){ b.classList.remove('on'); });
-  if (page === 'main') {
-    document.getElementById('mainPage').classList.add('show');
-    document.querySelectorAll('.bi')[0].classList.add('on');
-    loadData();
-  } else {
-    document.getElementById('settingsPage').classList.add('show');
-    document.querySelectorAll('.bi')[1].classList.add('on');
+// Grid layout per zone
+const GRID_CONFIG = {
+  cold:   { rows: 3, cols: 4, total: 12 },
+  freeze: { rows: 3, cols: 4, total: 12 },
+  door:   { rows: 2, cols: 4, total: 8 }
+};
+
+function getDefaultExpiry(itemName, zone) {
+  var info = FOOD_DEFAULTS[itemName];
+  if (info && info[zone]) {
+    var d = new Date();
+    d.setDate(d.getDate() + info[zone]);
+    return d.toISOString().split('T')[0];
   }
+  var fallback = { cold: 5, freeze: 30, door: 14 };
+  var d = new Date();
+  d.setDate(d.getDate() + (fallback[zone] || 7));
+  return d.toISOString().split('T')[0];
 }
 
-/* ========== Tab ?? ========== */
+function getColor(daysLeft) {
+  if (daysLeft === null || daysLeft === undefined) return 'empty';
+  if (daysLeft <= 0) return 'red';
+  if (daysLeft <= 3) return 'yellow';
+  return 'green';
+}
+
+function renderGrid(zone) {
+  var config = GRID_CONFIG[zone];
+  var container = document.getElementById('g-' + zone);
+  container.innerHTML = '';
+
+  for (var i = 0; i < config.total; i++) {
+    var item = findItemAt(zone, i);
+    var cell = document.createElement('div');
+    cell.className = 'cell';
+
+    if (item) {
+      var dl = item.days_left;
+      var color = getColor(dl);
+      cell.classList.add(color);
+      var nameSpan = '<div>' + escapeHtml(item.item_name) + '</div>';
+      var badge = '';
+      if (dl !== null && dl !== undefined) {
+        badge = '<div class="days-badge">' + (dl > 0 ? '+' + dl : dl) + '天</div>';
+      }
+      cell.innerHTML = nameSpan + badge;
+      cell.onclick = function(it) { return function() { openEditModal(it); }; }(item);
+    } else {
+      cell.classList.add('empty');
+      cell.innerHTML = '+';
+      cell.onclick = function(zn, idx) { return function() { openAddAtZone(zn, idx); }; }(zone, i);
+    }
+    container.appendChild(cell);
+  }
+  updateStats();
+}
+
+function findItemAt(zone, gridIdx) {
+  for (var i = 0; i < allItems.length; i++) {
+    if (allItems[i].storage_zone === zone && allItems[i].grid_index === gridIdx && allItems[i].status !== '已消耗' && allItems[i].status !== '已刪除') {
+      return allItems[i];
+    }
+  }
+  return null;
+}
+
+function updateStats() {
+  var safe = 0, warn = 0, danger = 0;
+  for (var i = 0; i < allItems.length; i++) {
+    var it = allItems[i];
+    if (it.status === '已消耗' || it.status === '已刪除') continue;
+    var c = getColor(it.days_left);
+    if (c === 'green') safe++;
+    else if (c === 'yellow') warn++;
+    else if (c === 'red') danger++;
+  }
+  document.getElementById('stat-safe').textContent = safe;
+  document.getElementById('stat-warn').textContent = warn;
+  document.getElementById('stat-danger').textContent = danger;
+  document.getElementById('stat-total').textContent = safe + warn + danger;
+}
+
 function switchTab(tab) {
   currentTab = tab;
-  document.getElementById('gridCold').style.display   = tab === 'cold'   ? 'block' : 'none';
-  document.getElementById('gridFrozen').style.display  = tab === 'frozen' ? 'block' : 'none';
-  document.getElementById('gridDoor').style.display    = tab === 'door'   ? 'block' : 'none';
-  document.querySelectorAll('.tab').forEach(function(t,i){
-    var names = ['cold','frozen','door'];
-    t.className = 'tab' + (names[i]===tab?' on':'' );
-  });
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('on');
+  document.querySelectorAll('.grid-wrap').forEach(function(g) { g.classList.remove('active'); });
+  document.getElementById('grid-' + tab).classList.add('active');
+  renderGrid(tab);
 }
 
-/* ========== 頛鞈? ========== */
-function loadData() {
-  if (!GAS_URL) {
-    alert('?emo 璅∪??n隢??喋身摰?????Google 閰衣?銵剁?\n\n嚗祕?蝙?冽?嚗迨????撖怠?函? Google Sheet嚗?);
-    closeModal('modalAdd');
-    return;
-  }
-
-  fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'addItem',
-      itemName: name,
-      gridIndex: currentGridIndex,
-      userExpiry: date || '',
-      operator: operator,
-      zone: zone
-    }),
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    if (res.status === 'ok') {
-      closeModal('modalAdd');
-      loadData();
-    } else {
-      alert('?啣?憭望?嚗? + (res.message||'?芰?航炊'));
-    }
-  })
-  .catch(function(err){ alert('蝬脰楝?航炊嚗? + err); });
+function openAddModal() {
+  currentItemId = '';
+  currentGridIndex = getNextEmptyGrid(currentTab);
+  document.getElementById('modal-title').textContent = '新增食材';
+  document.getElementById('m-item').value = '';
+  document.getElementById('m-zone').value = currentTab;
+  document.getElementById('m-expiry').value = '';
+  document.getElementById('modal-del-btn').style.display = 'none';
+  document.getElementById('modal-save-btn').onclick = saveItem;
+  showModal();
 }
 
-/* ========== ??閰單? ========== */
-function openDetail(item) {
+function openAddAtZone(zone, idx) {
+  currentGridIndex = idx;
+  currentItemId = '';
+  document.getElementById('modal-title').textContent = '新增食材';
+  document.getElementById('m-item').value = '';
+  document.getElementById('m-zone').value = zone;
+  document.getElementById('m-expiry').value = '';
+  document.getElementById('modal-del-btn').style.display = 'none';
+  document.getElementById('modal-save-btn').onclick = saveItem;
+  showModal();
+}
+
+function openEditModal(item) {
   currentItemId = item.id;
-  var title = document.getElementById('detailTitle');
-  title.innerHTML = escapeHtml(item.itemName) + ' <span class="x" onclick="closeModal(\'modalDetail\')">??/span>';
-
-  var today = new Date(); today.setHours(0,0,0,0);
-  var ed = new Date(item.expiryDate); ed.setHours(0,0,0,0);
-  var diff = Math.ceil((ed - today) / (1000*60*60*24));
-  var statusClass = diff <= 0 ? 'red' : diff <= 3 ? 'orange' : 'green';
-  var statusText  = diff <= 0 ? '撌脤????' : diff <= 3 ? '?單?嚗?敹恍?????' : '靽?摰 ??;
-  var dayText = diff < 0 ? '撌脤???' + Math.abs(diff) + ' 憭? : diff + ' 憭?;
-
-  var html = '';
-  html += '<div class="dr"><span class="dl">?? ?曄蔭雿蔭</span><span class="dv" id="dvZone">' + (item.gridIndex<=12?'?瑁?摰?:item.gridIndex<=21?'?瑕?摨?:'?????) + '</span></div>';
-  html += '<div class="dr"><span class="dl">?? ?駁??交?</span><span class="dv">' + (item.inputDate||'--') + '</span></div>';
-  html += '<div class="dr"><span class="dl">???唳??交?</span><span class="dv">' + (item.expiryDate||'--') + '</span></div>';
-  html += '<div class="dr"><span class="dl">? ?拚?憭拇</span><span class="dv ' + statusClass + '">' + dayText + '</span></div>';
-  html += '<div class="dr"><span class="dl">?? ???/span><span class="dv ' + statusClass + '">' + statusText + '</span></div>';
-  html += '<div class="dr"><span class="dl">? ??鈭?/span><span class="dv">' + escapeHtml(item.operatorNote||'--') + '</span></div>';
-
-  document.getElementById('detailContent').innerHTML = html;
-  document.getElementById('modalDetail').classList.add('show');
+  currentGridIndex = item.grid_index;
+  document.getElementById('modal-title').textContent = '編輯食材';
+  document.getElementById('m-item').value = item.item_name;
+  document.getElementById('m-zone').value = item.storage_zone;
+  document.getElementById('m-expiry').value = item.expiry_date ? item.expiry_date.split(' ')[0] : '';
+  document.getElementById('modal-del-btn').style.display = '';
+  document.getElementById('modal-save-btn').onclick = updateItem;
+  showModal();
 }
 
-/* ========== 璅?瘨?========== */
-function doConsume() {
-  if (!GAS_URL) {
-    alert('?emo 璅∪?????憪? Google 閰衣?銵剁?');
-    return;
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function showModal() { document.getElementById('modal').classList.add('show'); }
+
+function getNextEmptyGrid(zone) {
+  var config = GRID_CONFIG[zone];
+  for (var i = 0; i < config.total; i++) {
+    if (!findItemAt(zone, i)) return i;
   }
-  fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'deleteItem', id: currentItemId }),
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    closeModal('modalDetail');
-    if (res.status === 'ok') loadData();
-    else alert('??憭望?嚗? + (res.message||''));
-  })
-  .catch(function(err){ alert('蝬脰楝?航炊嚗? + err); });
+  return 0;
 }
 
-/* ========== ??敶? ========== */
-function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
+function saveItem() {
+  var itemName = document.getElementById('m-item').value.trim();
+  var zone = document.getElementById('m-zone').value;
+  var expiry = document.getElementById('m-expiry').value;
+  if (!itemName) { showToast('請輸入食材名稱'); return; }
+  if (!expiry) { expiry = getDefaultExpiry(itemName, zone); }
+  sendToGAS({ action: 'add', item_name: itemName, storage_zone: zone, grid_index: currentGridIndex, expiry_date: expiry });
+  closeModal();
 }
 
-/* ========== ???岫蝞” ========== */
-function initSheet() {
-  if (!GAS_URL || GAS_URL.indexOf('##') === 0) {
-    alert('隢?閮剖? GAS_URL嚗n\n隢 Google Apps Script ?函蔡 Web App嚗n銝血?蝬脣?憛怠 index.html ??GAS_URL 霈??);
-    return;
-  }
-  if (!confirm('?喳?????Google 閰衣?銵剁??亙歇摮??仿??嚗?蝣箏?嚗?)) return;
-  fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'initSheet' }),
-    headers: { 'Content-Type': 'application/json' }
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    if (res.status === 'ok') {
-      alert('????????\n\n隢炎?交??Google Drive嚗n???箇?蝞梁恣摰跛鞈?摨怒岫蝞”??);
-      loadData();
-    } else {
-      alert('???仃??' + (res.message||''));
-    }
-  })
-  .catch(function(err){
-    alert('蝬脰楝?航炊嚗? + err + '\n\n隢Ⅱ隤?\n1. GAS_URL ?臬甇?Ⅱ\n2. GAS ?臬撌脰身摰遙雿犖??????);
-  });
+function updateItem() {
+  var itemName = document.getElementById('m-item').value.trim();
+  var zone = document.getElementById('m-zone').value;
+  var expiry = document.getElementById('m-expiry').value;
+  if (!itemName) { showToast('請輸入食材名稱'); return; }
+  if (!expiry) { expiry = getDefaultExpiry(itemName, zone); }
+  sendToGAS({ action: 'update', id: currentItemId, item_name: itemName, storage_zone: zone, grid_index: currentGridIndex, expiry_date: expiry });
+  closeModal();
 }
 
-/* ========== ??鈭箄身摰?========== */
-function loadOperator() {
-  var op = localStorage.getItem('operator');
-  if (op) document.getElementById('operatorName').value = op;
-}
-function saveOperator() {
-  var op = document.getElementById('operatorName').value.trim();
-  localStorage.setItem('operator', op || '慦賢直');
+function deleteItem() {
+  if (!confirm('確定刪除這項食材？')) return;
+  sendToGAS({ action: 'delete', id: currentItemId });
+  closeModal();
 }
 
-/* ========== ?身憭拇 ========== */
-function loadDefaultDays() {
-  var d = localStorage.getItem('defaultDays');
-  if (d) document.getElementById('defaultDays').value = d;
-}
-function saveDefaultDays() {
-  var d = document.getElementById('defaultDays').value;
-  localStorage.setItem('defaultDays', d);
-  document.getElementById('fhDefaultDays').textContent = d;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2200);
 }
 
-/* ========== 撌亙?賢? ========== */
 function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
-function showLoading() {
-  ['gridColdInner','gridFrozenInner','gridDoorInner'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.innerHTML = '<div class="loading"><div class="spinner"></div>頛銝?..</div>';
-  });
+/* GAS Communication */
+function loadData() {
+  fetch(GAS_URL + '?action=list&callback=handleData', { method: 'GET' })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      try {
+        // Try to extract JSON from response
+        var jsonStart = text.indexOf('{');
+        var jsonEnd = text.lastIndexOf('}');
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+          var data = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+          handleData(data);
+          return;
+        }
+      } catch(e) {}
+      showLoading(false);
+      showDemoData();
+    })
+    .catch(function(err) {
+      console.log('Load error:', err);
+      showLoading(false);
+      showDemoData();
+    });
 }
 
-function resetSheet() {
-  if (confirm('蝣箏?閬?閮剛岫蝞”???閮剖???\n嚗???斗??Google Sheet 鞈?嚗?)) {
-    localStorage.removeItem('gas_url');
-    alert('撌脤?閮哨?隢??啗身摰?GAS_URL??);
+function handleData(data) {
+  showLoading(false);
+  if (data && data.items) {
+    allItems = data.items;
+  } else if (Array.isArray(data)) {
+    allItems = data;
   }
+  renderGrid(currentTab);
 }
 
-/* ========== Service Worker 閮餃? ========== */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(function(e) {
-    console.log('SW 閮餃?憭望?嚗?, e);
+function sendToGAS(payload) {
+  showToast('儲存中...');
+  var form = new FormData();
+  for (var key in payload) { form.append(key, payload[key]); }
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: form
+  }).then(function() {
+    showToast('儲存成功！');
+    setTimeout(function() { loadData(); }, 800);
+  }).catch(function(err) {
+    showToast('儲存失敗，請檢查網路');
+    console.error(err);
   });
 }
+
+function showLoading(show) {}
+
+function showDemoData() {
+  var now = new Date();
+  function dayOffset(n) { var d = new Date(now); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
+
+  allItems = [
+    { id: 'd1', item_name: '鮮奶', storage_zone: 'cold', grid_index: 0, expiry_date: dayOffset(5), status: '在庫', days_left: 5 },
+    { id: 'd2', item_name: '高麗菜', storage_zone: 'cold', grid_index: 1, expiry_date: dayOffset(2), status: '在庫', days_left: 2 },
+    { id: 'd3', item_name: '雞蛋', storage_zone: 'cold', grid_index: 2, expiry_date: dayOffset(-1), status: '在庫', days_left: -1 },
+    { id: 'd4', item_name: '豆腐', storage_zone: 'cold', grid_index: 3, expiry_date: dayOffset(4), status: '在庫', days_left: 4 },
+    { id: 'd5', item_name: '雞胸肉', storage_zone: 'cold', grid_index: 4, expiry_date: dayOffset(1), status: '在庫', days_left: 1 },
+    { id: 'd6', item_name: '黃瓜', storage_zone: 'cold', grid_index: 5, expiry_date: dayOffset(8), status: '在庫', days_left: 8 },
+    { id: 'd7', item_name: '緊肉片', storage_zone: 'freeze', grid_index: 0, expiry_date: dayOffset(25), status: '在庫', days_left: 25 },
+    { id: 'd8', item_name: '鯖魚', storage_zone: 'freeze', grid_index: 1, expiry_date: dayOffset(60), status: '在庫', days_left: 60 },
+    { id: 'd9', item_name: '蝴蝶麵', storage_zone: 'freeze', grid_index: 2, expiry_date: dayOffset(3), status: '在庫', days_left: 3 },
+    { id: 'd10', item_name: '香腸', storage_zone: 'door', grid_index: 0, expiry_date: dayOffset(10), status: '在庫', days_left: 10 },
+    { id: 'd11', item_name: '沙茶醬', storage_zone: 'door', grid_index: 1, expiry_date: dayOffset(300), status: '在庫', days_left: 300 },
+    { id: 'd12', item_name: '奶酪', storage_zone: 'door', grid_index: 2, expiry_date: dayOffset(45), status: '在庫', days_left: 45 }
+  ];
+  renderGrid(currentTab);
+}
+
+/* Init */
+if (!GAS_URL) { showDemoData(); } else { loadData(); }
 </script>
 </body>
 </html>
