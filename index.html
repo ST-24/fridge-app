@@ -300,7 +300,7 @@ function renderGrid(zone){
       cell.onclick=(function(it){return function(){openEditModal(it);};})(item);
       initDrag(cell,item,zone,i);
     }else{
-      cell.classList.add('empty';cell.innerHTML='+';
+      cell.classList.add('empty');cell.innerHTML='+';
       cell.onclick=(function(z,idx){return function(){openAddAtZone(z,idx);};})(zone,i);
     }
     container.appendChild(cell);
