@@ -77,6 +77,17 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:2000;opacity:0;transition:opacity 0.3s;pointer-events:none}
 .toast.show{opacity:1}
+
+/* Grid Size Slider */
+.size-bar{display:flex;align-items:center;gap:8px;padding:6px 16px;background:#f8faf8;font-size:11px;color:#666}
+.size-bar label{white-space:nowrap;font-weight:700;color:#555}
+.size-bar input[type=range]{flex:1;accent-color:#2d6a4f;height:4px}
+.size-bar .size-val{min-width:22px;text-align:center;font-weight:800;color:#2d6a4f}
+
+/* Drag & Drop */
+.cell.dragging{opacity:0.5;transform:scale(1.08);z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+.cell.drag-over{border:3px dashed #2d6a4f;background:#e8f5e9!important}
+.cell .drag-hint{position:absolute;top:2px;right:2px;font-size:9px;color:#aaa;pointer-events:none;user-select:none}
 </style>
 </head>
 <body>
@@ -100,6 +111,11 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
     <span><i style="background:#ef476f"></i>過期 ≤0天</span>
   </div>
 
+  <div class="size-bar">
+<label>格點大小</label>
+<input type="range" id="grid-size" min="2" max="6" value="4" oninput="changeGridSize(this.value)">
+<span class="size-val" id="size-val">4</span>
+</div>
   <div id="grid-cold" class="grid-wrap active"><div class="grid" id="g-cold"></div></div>
   <div id="grid-freeze" class="grid-wrap"><div class="grid" id="g-freeze"></div></div>
   <div id="grid-door" class="grid-wrap"><div class="grid" id="g-door"></div></div>
@@ -147,271 +163,229 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxmoehjgtd4pQH3KayjVQysUakbz1BrRcy9m-0Rn5UwgzceR0S0fh-dnDz12-Muypc/exec";
-
-var currentTab = 'cold';
-var currentGridIndex = 0;
-var currentItemId = '';
-var allItems = [];
-
-// Taiwan food defaults
+var currentTab = 'cold', currentGridIndex = 0, currentItemId = '', allItems = [];
+var STORAGE_KEY = 'fridge_items_v2';
+var gridCols = 4;
 const FOOD_DEFAULTS = {"高麗菜": {"cold": 7, "freeze": null}, "空心菜": {"cold": 3, "freeze": null}, "青江菜": {"cold": 4, "freeze": null}, "花椰菜": {"cold": 5, "freeze": null}, "白菜": {"cold": 7, "freeze": null}, "菠菜": {"cold": 5, "freeze": null}, "花瓜": {"cold": 4, "freeze": null}, "苞蔔菜": {"cold": 7, "freeze": null}, "絲絲菜": {"cold": 3, "freeze": null}, "花生芽": {"cold": 5, "freeze": null}, "玉米筍": {"cold": 4, "freeze": null}, "蒜苗": {"cold": 10, "freeze": null}, "蔥": {"cold": 14, "freeze": null}, "薑": {"cold": 14, "freeze": null}, "菇": {"cold": 7, "freeze": null}, "紅蘿蔔": {"cold": 14, "freeze": null}, "黃瓜": {"cold": 10, "freeze": null}, "西瓜": {"cold": 7, "freeze": null}, "豌豆": {"cold": 5, "freeze": null}, "穀類": {"cold": 30, "freeze": 180}, "鮮奶": {"cold": 7, "freeze": 30}, "優酪乳": {"cold": 7, "freeze": 30}, "雞蛋": {"cold": 21, "freeze": null}, "豆腐": {"cold": 5, "freeze": 30}, "豆漿": {"cold": 3, "freeze": 60}, "豆腐皮": {"cold": 7, "freeze": 90}, "臭豆腐": {"cold": 365, "freeze": 365}, "豬肉絲": {"cold": 2, "freeze": 30}, "雞胸肉": {"cold": 2, "freeze": 30}, "緊肉片": {"cold": 2, "freeze": 120}, "牛排": {"cold": 2, "freeze": 90}, "里肌肉": {"cold": 2, "freeze": 90}, "鯖魚": {"cold": 1, "freeze": 90}, "蟹管": {"cold": 1, "freeze": 90}, "蝦子": {"cold": 1, "freeze": 90}, "香腸": {"cold": 14, "freeze": 60}, "貢丸": {"cold": 14, "freeze": 60}, "拉麵": {"cold": 3, "freeze": 90}, "麵條": {"cold": 3, "freeze": 180}, "餐包": {"cold": 3, "freeze": 90}, "沙茶醬": {"cold": 365, "freeze": 365}, "胡椒粉": {"cold": 365, "freeze": 365}, "醬油": {"cold": 365, "freeze": 365}, "奶油": {"cold": 14, "freeze": 120}, "蜜餞": {"cold": 14, "freeze": 180}, "布丁": {"cold": 14, "freeze": 90}, "養樂多": {"cold": 365, "freeze": 365}, "果醬": {"cold": 365, "freeze": 365}, "果凍": {"cold": 7, "freeze": 180}};
 
-// Grid layout per zone
-const GRID_CONFIG = {
-  cold:   { rows: 3, cols: 4, total: 12 },
-  freeze: { rows: 3, cols: 4, total: 12 },
-  door:   { rows: 2, cols: 4, total: 8 }
-};
+/* ====== GRID CONFIG (dynamic cols) ====== */
+function getGridConfig(zone) {
+  var baseTotals = { cold: 12, freeze: 12, door: 8 };
+  var total = baseTotals[zone] || 12;
+  var rows = Math.ceil(total / gridCols);
+  return { rows: rows, cols: gridCols, total: total };
+}
 
-function getDefaultExpiry(itemName, zone) {
-  var info = FOOD_DEFAULTS[itemName];
-  if (info && info[zone]) {
-    var d = new Date();
-    d.setDate(d.getDate() + info[zone]);
-    return d.toISOString().split('T')[0];
+function changeGridSize(val) {
+  gridCols = parseInt(val);
+  document.getElementById('size-val').textContent = val;
+  try { localStorage.setItem('fridge_grid_cols', val); } catch(e) {}
+  renderGrid(currentTab);
+}
+
+/* ====== LOCAL STORAGE ====== */
+function gid() { return 'it_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
+function saveStorage() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(allItems)); } catch(e){} }
+function loadStorage() {
+  try {
+    var d = localStorage.getItem(STORAGE_KEY);
+    if (d) { allItems = JSON.parse(d); recalcDays(); return true; }
+  } catch(e){}
+  return false;
+}
+function recalcDays() {
+  var t=new Date(); t.setHours(0,0,0,0);
+  for (var i=0;i<allItems.length;i++) {
+    if (allItems[i].expiry_date) {
+      var e=new Date(allItems[i].expiry_date); e.setHours(0,0,0,0);
+      allItems[i].days_left = Math.ceil((e-t)/(86400000));
+    }
   }
-  var fallback = { cold: 5, freeze: 30, door: 14 };
-  var d = new Date();
-  d.setDate(d.getDate() + (fallback[zone] || 7));
-  return d.toISOString().split('T')[0];
 }
 
-function getColor(daysLeft) {
-  if (daysLeft === null || daysLeft === undefined) return 'empty';
-  if (daysLeft <= 0) return 'red';
-  if (daysLeft <= 3) return 'yellow';
-  return 'green';
+/* ====== CRUD ====== */
+function addItem(n,z,idx,exp) {
+  var it={id:gid(),item_name:n,storage_zone:z,grid_index:idx,expiry_date:exp,input_date:new Date().toISOString().split('T')[0],status:'在庫',operator_note:'',days_left:null};
+  var t=new Date();t.setHours(0,0,0,0); var e=new Date(exp);e.setHours(0,0,0,0);
+  it.days_left=Math.ceil((e-t)/(86400000)); allItems.push(it); saveStorage(); renderGrid(currentTab);
+}
+function updItem(id,n,z,idx,exp){
+  for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){
+    allItems[i].item_name=n;allItems[i].storage_zone=z;allItems[i].grid_index=idx;allItems[i].expiry_date=exp;
+    var t=new Date();t.setHours(0,0,0,0);var e=new Date(exp);e.setHours(0,0,0,0);
+    allItems[i].days_left=Math.ceil((e-t)/(86400000));saveStorage();renderGrid(currentTab);return;
+  }}
+}
+function delItem(id){for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){allItems.splice(i,1);saveStorage();renderGrid(currentTab);return;}}}
+
+/* ====== HELPERS ====== */
+function getDefExp(name,zone){
+  var info=FOOD_DEFAULTS[name];
+  if(info&&info[zone]){var d=new Date();d.setDate(d.getDate()+info[zone]);return d.toISOString().split('T')[0];}
+  var fb={cold:5,freeze:30,door:14};var d=new Date();d.setDate(d.getDate()+(fb[zone]||7));return d.toISOString().split('T')[0];
+}
+function getColor(dl){if(dl===null||dl===undefined)return'empty';if(dl<=0)return'red';if(dl<=3)return'yellow';return'green';}
+
+/* ====== DRAG & DROP ====== */
+var dragItem = null, dragEl = null, dragStartZone = null, dragStartIdx = null, longPressTimer = null;
+
+function initDrag(cell, item, zone, idx) {
+  cell.draggable = true;
+  cell.addEventListener('dragstart', function(e) {
+    dragItem = item; dragEl = cell; dragStartZone = zone; dragStartIdx = idx;
+    cell.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', item.id);
+  });
+  cell.addEventListener('dragend', function() {
+    cell.classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(function(el){el.classList.remove('drag-over');});
+    dragItem=null;dragEl=null;dragStartZone=null;dragStartIdx=null;
+  });
+  // Touch long-press for mobile
+  var pressTimer = null;
+  cell.addEventListener('touchstart', function(e) {
+    pressTimer = setTimeout(function() {
+      dragItem = item; dragEl = cell; dragStartZone = zone; dragStartIdx = idx;
+      cell.classList.add('dragging');
+      showToast('拖曳移動到目標格點');
+    }, 400);
+  }, {passive:true});
+  cell.addEventListener('touchend', function() {
+    clearTimeout(pressTimer);
+  });
+  cell.addEventListener('touchmove', function() {
+    clearTimeout(pressTimer);
+  }, {passive:true});
 }
 
+function allowDrop(e) { e.preventDefault(); e.dataTransfer.dropEffect='move'; }
+
+function handleDrop(targetCell, targetZone, targetIdx) {
+  if (!dragItem || !dragEl) return;
+  // Swap positions
+  var targetItem = findItemAt(targetZone, targetIdx);
+  if (targetItem && targetItem.id !== dragItem.id) {
+    // swap
+    var oldZone = dragItem.storage_zone, oldIdx = dragItem.grid_index;
+    dragItem.storage_zone = targetZone; dragItem.grid_index = targetIdx;
+    targetItem.storage_zone = oldZone; targetItem.grid_index = oldIdx;
+  } else if (!targetItem) {
+    // move to empty
+    dragItem.storage_zone = targetZone; dragItem.grid_index = targetIdx;
+  }
+  saveStorage();
+  renderGrid(currentTab);
+  showToast('已移動');
+}
+
+/* ====== RENDER ====== */
 function renderGrid(zone) {
-  var config = GRID_CONFIG[zone];
+  var config = getGridConfig(zone);
   var container = document.getElementById('g-' + zone);
+  container.style.gridTemplateColumns = 'repeat('+config.cols+',1fr)';
   container.innerHTML = '';
-
   for (var i = 0; i < config.total; i++) {
     var item = findItemAt(zone, i);
     var cell = document.createElement('div');
     cell.className = 'cell';
+    cell.ondragover = function(){this.classList.add('drag-over');return false;};
+    cell.ondragleave = function(){this.classList.remove('drag-over');};
+    cell.ondrop = (function(z,idx){return function(e){
+      e.preventDefault(); this.classList.remove('drag-over'); handleDrop(this,z,idx);
+    };})(zone,i);
 
     if (item) {
-      var dl = item.days_left;
-      var color = getColor(dl);
-      cell.classList.add(color);
-      var nameSpan = '<div>' + escapeHtml(item.item_name) + '</div>';
-      var badge = '';
-      if (dl !== null && dl !== undefined) {
-        badge = '<div class="days-badge">' + (dl > 0 ? '+' + dl : dl) + '天</div>';
-      }
-      cell.innerHTML = nameSpan + badge;
-      cell.onclick = function(it) { return function() { openEditModal(it); }; }(item);
+      var dl=item.days_left,c=getColor(dl);cell.classList.add(c);
+      var h='<div>'+escapeHtml(item.item_name)+'</div>';
+      if(dl!==null&&dl!==undefined)h+='<div class="days-badge">'+(dl>0?'+'+dl:dl)+'天</div>';
+      h+='<span class="drag-hint">☜</span>';
+      cell.innerHTML=h;
+      cell.onclick=(function(it){return function(){openEditModal(it);};})(item);
+      initDrag(cell,item,zone,i);
     } else {
-      cell.classList.add('empty');
-      cell.innerHTML = '+';
-      cell.onclick = function(zn, idx) { return function() { openAddAtZone(zn, idx); }; }(zone, i);
+      cell.classList.add('empty');cell.innerHTML='+';
+      cell.onclick=(function(z,idx){return function(){openAddAtZone(z,idx);};})(zone,i);
     }
     container.appendChild(cell);
   }
   updateStats();
 }
 
-function findItemAt(zone, gridIdx) {
-  for (var i = 0; i < allItems.length; i++) {
-    if (allItems[i].storage_zone === zone && allItems[i].grid_index === gridIdx && allItems[i].status !== '已消耗' && allItems[i].status !== '已刪除') {
-      return allItems[i];
-    }
-  }
+function findItemAt(zone,gIdx){
+  for(var i=0;i<allItems.length;i++)if(allItems[i].storage_zone===zone&&allItems[i].grid_index===gIdx)return allItems[i];
   return null;
 }
 
-function updateStats() {
-  var safe = 0, warn = 0, danger = 0;
-  for (var i = 0; i < allItems.length; i++) {
-    var it = allItems[i];
-    if (it.status === '已消耗' || it.status === '已刪除') continue;
-    var c = getColor(it.days_left);
-    if (c === 'green') safe++;
-    else if (c === 'yellow') warn++;
-    else if (c === 'red') danger++;
-  }
-  document.getElementById('stat-safe').textContent = safe;
-  document.getElementById('stat-warn').textContent = warn;
-  document.getElementById('stat-danger').textContent = danger;
-  document.getElementById('stat-total').textContent = safe + warn + danger;
+function updateStats(){
+  var s=0,w=0,d=0;
+  for(var i=0;i<allItems.length;i++){var c=getColor(allItems[i].days_left);if(c==='green')s++;else if(c==='yellow')w++;else if(c==='red')d++;}
+  $('stat-safe').textContent=s;$('stat-warn').textContent=w;$('stat-danger').textContent=d;$('stat-total').textContent=s+w+d;
+}
+function $(id){return document.getElementById(id);}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  document.querySelector('[data-tab="'+tab+'"]').classList.add('on');
+  document.querySelectorAll('.grid-wrap').forEach(function(g){g.classList.remove('active');});
+  $('grid-'+tab).classList.add('active');renderGrid(tab);
 }
 
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
-  document.querySelector('[data-tab="' + tab + '"]').classList.add('on');
-  document.querySelectorAll('.grid-wrap').forEach(function(g) { g.classList.remove('active'); });
-  document.getElementById('grid-' + tab).classList.add('active');
-  renderGrid(tab);
+/* ====== MODAL ====== */
+function openAddModal(){currentItemId='';currentGridIndex=getNextEmpty(currentTab);
+  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=currentTab;$('m-expiry').value='';
+  $('modal-del-btn').style.display='none';$('modal-save-btn').onclick=doSave;showModal();}
+function openAddAtZone(z,idx){currentGridIndex=idx;currentItemId='';
+  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=z;$('m-expiry').value='';
+  $('modal-del-btn').style.display='none';$('modal-save-btn').onclick=doSave;showModal();}
+function openEditModal(it){currentItemId=it.id;currentGridIndex=it.grid_index;
+  $('modal-title').textContent='編輯食材';$('m-item').value=it.item_name;$('m-zone').value=it.storage_zone;
+  $('m-expiry').value=it.expiry_date?it.expiry_date.split(' ')[0]:'';
+  $('modal-del-btn').style.display='';$('modal-save-btn').onclick=doUpdate;showModal();}
+function closeModal(){$('modal').classList.remove('show');}
+function showModal(){$('modal').classList.add('show');}
+function getNextEmpty(zone){var c=getGridConfig(zone);for(var i=0;i<c.total;i++)if(!findItemAt(zone,i))return i;return 0;}
+function doSave(){
+  var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
+  if(!n){showToast('請輸入食材名稱');return;}
+  if(!e)e=getDefExp(n,z);addItem(n,z,currentGridIndex,e);closeModal();showToast('儲存成功！');
 }
-
-function openAddModal() {
-  currentItemId = '';
-  currentGridIndex = getNextEmptyGrid(currentTab);
-  document.getElementById('modal-title').textContent = '新增食材';
-  document.getElementById('m-item').value = '';
-  document.getElementById('m-zone').value = currentTab;
-  document.getElementById('m-expiry').value = '';
-  document.getElementById('modal-del-btn').style.display = 'none';
-  document.getElementById('modal-save-btn').onclick = saveItem;
-  showModal();
+function doUpdate(){
+  var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
+  if(!n){showToast('請輸入食材名稱');return;}
+  if(!e)e=getDefExp(n,z);updItem(currentItemId,n,z,currentGridIndex,e);closeModal();showToast('更新成功！');
 }
+function doDelete(){if(!confirm('確定刪除？'))return;delItem(currentItemId);closeModal();showToast('已刪除');}
+function showToast(msg){var el=$('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2200);}
+function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
-function openAddAtZone(zone, idx) {
-  currentGridIndex = idx;
-  currentItemId = '';
-  document.getElementById('modal-title').textContent = '新增食材';
-  document.getElementById('m-item').value = '';
-  document.getElementById('m-zone').value = zone;
-  document.getElementById('m-expiry').value = '';
-  document.getElementById('modal-del-btn').style.display = 'none';
-  document.getElementById('modal-save-btn').onclick = saveItem;
-  showModal();
-}
-
-function openEditModal(item) {
-  currentItemId = item.id;
-  currentGridIndex = item.grid_index;
-  document.getElementById('modal-title').textContent = '編輯食材';
-  document.getElementById('m-item').value = item.item_name;
-  document.getElementById('m-zone').value = item.storage_zone;
-  document.getElementById('m-expiry').value = item.expiry_date ? item.expiry_date.split(' ')[0] : '';
-  document.getElementById('modal-del-btn').style.display = '';
-  document.getElementById('modal-save-btn').onclick = updateItem;
-  showModal();
-}
-
-function closeModal() { document.getElementById('modal').classList.remove('show'); }
-function showModal() { document.getElementById('modal').classList.add('show'); }
-
-function getNextEmptyGrid(zone) {
-  var config = GRID_CONFIG[zone];
-  for (var i = 0; i < config.total; i++) {
-    if (!findItemAt(zone, i)) return i;
-  }
-  return 0;
-}
-
-function saveItem() {
-  var itemName = document.getElementById('m-item').value.trim();
-  var zone = document.getElementById('m-zone').value;
-  var expiry = document.getElementById('m-expiry').value;
-  if (!itemName) { showToast('請輸入食材名稱'); return; }
-  if (!expiry) { expiry = getDefaultExpiry(itemName, zone); }
-  sendToGAS({ action: 'add', item_name: itemName, storage_zone: zone, grid_index: currentGridIndex, expiry_date: expiry });
-  closeModal();
-}
-
-function updateItem() {
-  var itemName = document.getElementById('m-item').value.trim();
-  var zone = document.getElementById('m-zone').value;
-  var expiry = document.getElementById('m-expiry').value;
-  if (!itemName) { showToast('請輸入食材名稱'); return; }
-  if (!expiry) { expiry = getDefaultExpiry(itemName, zone); }
-  sendToGAS({ action: 'update', id: currentItemId, item_name: itemName, storage_zone: zone, grid_index: currentGridIndex, expiry_date: expiry });
-  closeModal();
-}
-
-function deleteItem() {
-  if (!confirm('確定刪除這項食材？')) return;
-  sendToGAS({ action: 'delete', id: currentItemId });
-  closeModal();
-}
-
-function showToast(msg) {
-  var el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(function() { el.classList.remove('show'); }, 2200);
-}
-
-function escapeHtml(str) {
-  var div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-/* GAS Communication */
-function loadData() {
-  fetch(GAS_URL + '?action=list&callback=handleData', { method: 'GET' })
-    .then(function(r) { return r.text(); })
-    .then(function(text) {
-      try {
-        // Try to extract JSON from response
-        var jsonStart = text.indexOf('{');
-        var jsonEnd = text.lastIndexOf('}');
-        if (jsonStart >= 0 && jsonEnd > jsonStart) {
-          var data = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
-          handleData(data);
-          return;
-        }
-      } catch(e) {}
-      showLoading(false);
-      showDemoData();
-    })
-    .catch(function(err) {
-      console.log('Load error:', err);
-      showLoading(false);
-      showDemoData();
-    });
-}
-
-function handleData(data) {
-  showLoading(false);
-  if (data && data.items) {
-    allItems = data.items;
-  } else if (Array.isArray(data)) {
-    allItems = data;
-  }
-  renderGrid(currentTab);
-}
-
-function sendToGAS(payload) {
-  showToast('儲存中...');
-  var form = new FormData();
-  for (var key in payload) { form.append(key, payload[key]); }
-
-  fetch(GAS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    body: form
-  }).then(function() {
-    showToast('儲存成功！');
-    setTimeout(function() { loadData(); }, 800);
-  }).catch(function(err) {
-    showToast('儲存失敗，請檢查網路');
-    console.error(err);
-  });
-}
-
-function showLoading(show) {}
-
-function showDemoData() {
-  var now = new Date();
-  function dayOffset(n) { var d = new Date(now); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
-
-  allItems = [
-    { id: 'd1', item_name: '鮮奶', storage_zone: 'cold', grid_index: 0, expiry_date: dayOffset(5), status: '在庫', days_left: 5 },
-    { id: 'd2', item_name: '高麗菜', storage_zone: 'cold', grid_index: 1, expiry_date: dayOffset(2), status: '在庫', days_left: 2 },
-    { id: 'd3', item_name: '雞蛋', storage_zone: 'cold', grid_index: 2, expiry_date: dayOffset(-1), status: '在庫', days_left: -1 },
-    { id: 'd4', item_name: '豆腐', storage_zone: 'cold', grid_index: 3, expiry_date: dayOffset(4), status: '在庫', days_left: 4 },
-    { id: 'd5', item_name: '雞胸肉', storage_zone: 'cold', grid_index: 4, expiry_date: dayOffset(1), status: '在庫', days_left: 1 },
-    { id: 'd6', item_name: '黃瓜', storage_zone: 'cold', grid_index: 5, expiry_date: dayOffset(8), status: '在庫', days_left: 8 },
-    { id: 'd7', item_name: '緊肉片', storage_zone: 'freeze', grid_index: 0, expiry_date: dayOffset(25), status: '在庫', days_left: 25 },
-    { id: 'd8', item_name: '鯖魚', storage_zone: 'freeze', grid_index: 1, expiry_date: dayOffset(60), status: '在庫', days_left: 60 },
-    { id: 'd9', item_name: '蝴蝶麵', storage_zone: 'freeze', grid_index: 2, expiry_date: dayOffset(3), status: '在庫', days_left: 3 },
-    { id: 'd10', item_name: '香腸', storage_zone: 'door', grid_index: 0, expiry_date: dayOffset(10), status: '在庫', days_left: 10 },
-    { id: 'd11', item_name: '沙茶醬', storage_zone: 'door', grid_index: 1, expiry_date: dayOffset(300), status: '在庫', days_left: 300 },
-    { id: 'd12', item_name: '奶酪', storage_zone: 'door', grid_index: 2, expiry_date: dayOffset(45), status: '在庫', days_left: 45 }
+/* ====== DEMO (first launch) ====== */
+function showDemo(){
+  var now=new Date();
+  function off(n){var d=new Date(now);d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
+  allItems=[
+    {id:'d1',item_name:'體奶',storage_zone:'cold',grid_index:0,expiry_date:off(5),status:'在庫',days_left:5},
+    {id:'d2',item_name:'高麗菜',storage_zone:'cold',grid_index:1,expiry_date:off(2),status:'在庫',days_left:2},
+    {id:'d3',item_name:'麚蛋',storage_zone:'cold',grid_index:2,expiry_date:off(-1),status:'在庫',days_left:-1},
+    {id:'d4',item_name:'豆腐',storage_zone:'cold',grid_index:3,expiry_date:off(4),status:'在庫',days_left:4},
+    {id:'d5',item_name:'雞胸肉',storage_zone:'cold',grid_index:4,expiry_date:off(1),status:'在庫',days_left:1},
+    {id:'d6',item_name:'黃瓜',storage_zone:'cold',grid_index:5,expiry_date:off(8),status:'在庫',days_left:8},
+    {id:'d7',item_name:'緊肉片',storage_zone:'freeze',grid_index:0,expiry_date:off(25),status:'在庫',days_left:25},
+    {id:'d8',item_name:'鮭魚',storage_zone:'freeze',grid_index:1,expiry_date:off(60),status:'在庫',days_left:60},
+    {id:'d9',item_name:'蝴蝶麵',storage_zone:'freeze',grid_index:2,expiry_date:off(3),status:'在庫',days_left:3},
+    {id:'d10',item_name:'香腸',storage_zone:'door',grid_index:0,expiry_date:off(10),status:'在庫',days_left:10},
+    {id:'d11',item_name:'沙茶醬',storage_zone:'door',grid_index:1,expiry_date:off(300),status:'在庫',days_left:300},
+    {id:'d12',item_name:'奶油',storage_zone:'door',grid_index:2,expiry_date:off(45),status:'在庫',days_left:45}
   ];
-  renderGrid(currentTab);
+  saveStorage();renderGrid(currentTab);
 }
 
-/* Init */
-if (!GAS_URL) { showDemoData(); } else { loadData(); }
+/* ====== INIT ====== */
+(function(){
+  var savedCols = localStorage.getItem('fridge_grid_cols');
+  if(savedCols){gridCols=parseInt(savedCols);$('grid-size').value=gridCols;$('size-val').textContent=gridCols;}
+  if(loadStorage()){renderGrid(currentTab);}else{showDemo();}
+})();
 </script>
 </body>
 </html>
