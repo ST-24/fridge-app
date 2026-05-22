@@ -13,20 +13,27 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;background:#e8edf2;display:flex;justify-content:center;min-height:100vh}
 .phone{width:100%;max-width:430px;background:#fff;min-height:100vh;position:relative;overflow-x:hidden}
-
 .hd{background:linear-gradient(160deg,#1a392b 0%,#2d6a4f 50%,#52b788 100%);color:#fff;padding:18px 22px 16px;position:relative;overflow:hidden}
 .hd::after{content:"";position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.06);border-radius:50%}
 .hd1{font-size:10px;opacity:0.7;letter-spacing:2px;text-transform:uppercase}
 .hd2{font-size:23px;font-weight:900;margin-top:4px;letter-spacing:1px}
 .hd3{font-size:11px;opacity:0.75;margin-top:5px}
-
 .tabs{display:flex;background:linear-gradient(180deg,#e8f5e9 0%,#f0faf1 100%);border-bottom:1px solid #c8e6c9}
 .tab{flex:1;text-align:center;padding:12px 0;font-size:13.5px;font-weight:700;color:#6b9080;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s}
 .tab.on{color:#1b4332;border-bottom-color:#2d6a4f;background:rgba(255,255,255,0.6)}
-
 .legend{display:flex;justify-content:center;gap:14px;padding:8px 0 4px;font-size:11px;color:#777;background:#fafcfb}
 .legend span{display:flex;align-items:center;gap:3px}
 .legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+/* Toolbar: size slider + add/remove grid */
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:#f8faf8;border-bottom:1px solid #eee}
+.toolbar .lbl{font-size:11px;font-weight:700;color:#555;white-space:nowrap}
+.toolbar input[type=range]{flex:1;accent-color:#2d6a4f;height:4px}
+.toolbar .val{min-width:20px;text-align:center;font-weight:800;color:#2d6a4f;font-size:13px}
+.toolbar-btn{width:32px;height:32px;border-radius:8px;border:2px solid #ddd;background:#fff;font-size:16px;font-weight:900;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.toolbar-btn:active{background:#2d6a4f;color:#fff;border-color:#2d6a4f}
+.toolbar-btn.danger{border-color:#ffcdd2;color:#c62828}
+.toolbar-btn.danger:active{background:#c62828;color:#fff}
 
 .grid-wrap{padding:10px;display:none}
 .grid-wrap.active{display:block}
@@ -38,19 +45,16 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 .cell.yellow{background:linear-gradient(135deg,#fff3cd,#ffe69c);color:#664d03;border:2px solid #ffc107}
 .cell.red{background:linear-gradient(135deg,#ffccd5,#ffa8b0);color:#900c20;border:2px solid #ef476f}
 .cell .days-badge{position:absolute;top:-2px;right:-2px;font-size:9px;font-weight:800;padding:2px 5px;border-radius:8px;color:#fff;min-width:22px;text-align:center}
-.cell.green .days-badge{background:#2d6a4f}
-.cell.yellow .days-badge{background:#e67700}
-.cell.red .days-badge{background:#c1121f}
+.cell.green .days-badge{background:#2d6a4f}.cell.yellow .days-badge{background:#e67700}.cell.red .days-badge{background:#c1121f}
+.cell.dragging{opacity:0.45;transform:scale(1.08);z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+.cell.drag-over{border:3px dashed #2d6a4f;background:#e8f5e9!important}
+.cell .drag-hint{position:absolute;top:2px;right:2px;font-size:9px;color:#ccc;pointer-events:none;user-select:none}
 
 .stats{display:flex;justify-content:center;gap:16px;padding:10px 0 6px;font-size:12px;color:#555;background:#fafcfb}
 .stat{text-align:center}
 .stat .num{font-size:22px;font-weight:900}
 .stat .label{font-size:10px;color:#888;margin-top:1px}
-.stat.safe .num{color:#2d6a4f}
-.stat.warn .num{color:#e67700}
-.stat.danger .num{color:#c1121f}
-.stat.total .num{color:#555}
-
+.stat.safe .num{color:#2d6a4f}.stat.warn .num{color:#e67700}.stat.danger .num{color:#c1121f}.stat.total .num{color:#555}
 .footer-note{text-align:center;font-size:10px;color:#aaa;padding:8px 0 14px;background:#fafcfb}
 
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center}
@@ -67,27 +71,10 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 .btn-danger{background:linear-gradient(135deg,#c1121f,#ef476f);color:#fff}
 .btn-cancel{background:#eee;color:#666}
 .btn:active{opacity:0.8}
-
 .fab{position:fixed;bottom:20px;right:50%;transform:translateX(215px);width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2d6a4f,#52b788);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(45,106,79,0.35);cursor:pointer;z-index:100;border:none;outline:none}
 .fab:active{transform:translateX(215px) scale(0.92)}
-
-.loading{text-align:center;padding:40px 0;color:#999;font-size:13px}
-.loading .spinner{width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:#52b788;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:2000;opacity:0;transition:opacity 0.3s;pointer-events:none}
 .toast.show{opacity:1}
-
-/* Grid Size Slider */
-.size-bar{display:flex;align-items:center;gap:8px;padding:6px 16px;background:#f8faf8;font-size:11px;color:#666}
-.size-bar label{white-space:nowrap;font-weight:700;color:#555}
-.size-bar input[type=range]{flex:1;accent-color:#2d6a4f;height:4px}
-.size-bar .size-val{min-width:22px;text-align:center;font-weight:800;color:#2d6a4f}
-
-/* Drag & Drop */
-.cell.dragging{opacity:0.5;transform:scale(1.08);z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
-.cell.drag-over{border:3px dashed #2d6a4f;background:#e8f5e9!important}
-.cell .drag-hint{position:absolute;top:2px;right:2px;font-size:9px;color:#aaa;pointer-events:none;user-select:none}
 </style>
 </head>
 <body>
@@ -96,26 +83,31 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
   <div class="hd">
     <div class="hd1">TAIWAN EXCLUSIVE</div>
     <div class="hd2">冰箱管家</div>
-    <div class="hd3">格點視覺化列表 · 零摩擦家庭共用</div>
+    <div class="hd3">格點視覺化 · 零摩擦家庭共用</div>
   </div>
 
   <div class="tabs">
     <div class="tab on" data-tab="cold" onclick="switchTab('cold')">冷藏室</div>
     <div class="tab" data-tab="freeze" onclick="switchTab('freeze')">冷凍庫</div>
-    <div class="tab" data-tab="door" onclick="switchTab('door')">門片櫃架</div>
+    <div class="tab" data-tab="door" onclick="switchTab('door')">門片柜架</div>
   </div>
 
   <div class="legend">
-    <span><i style="background:#4CAF50"></i>安全 >3天</span>
+    <span><i style="background:#4CAF50"></i>安全 &gt;3天</span>
     <span><i style="background:#FFC107"></i>即期 1~3天</span>
     <span><i style="background:#ef476f"></i>過期 ≤0天</span>
   </div>
 
-  <div class="size-bar">
-<label>格點大小</label>
-<input type="range" id="grid-size" min="2" max="6" value="4" oninput="changeGridSize(this.value)">
-<span class="size-val" id="size-val">4</span>
-</div>
+  <!-- Toolbar: grid size controls -->
+  <div class="toolbar">
+    <span class="lbl">格點</span>
+    <button class="toolbar-btn danger" onclick="removeGridCell()" title="刪除一格">-</button>
+    <input type="range" id="grid-cols" min="2" max="6" value="4" oninput="onColChange(this.value)">
+    <span class="val" id="cols-val">4</span>
+    <button class="toolbar-btn" onclick="addGridCell()" title="新增一格">+</button>
+    <span class="lbl" style="margin-left:4px" id="cell-count">12格</span>
+  </div>
+
   <div id="grid-cold" class="grid-wrap active"><div class="grid" id="g-cold"></div></div>
   <div id="grid-freeze" class="grid-wrap"><div class="grid" id="g-freeze"></div></div>
   <div id="grid-door" class="grid-wrap"><div class="grid" id="g-door"></div></div>
@@ -127,7 +119,7 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
     <div class="stat total"><div class="num" id="stat-total">0</div><div class="label">總數</div></div>
   </div>
 
-  <div class="footer-note">點擊格點可新增 / 編輯 / 消耗食材</div>
+  <div class="footer-note">長拖格點移動 · 點擊編輯 · + 新增</div>
 </div>
 
 <button class="fab" onclick="openAddModal()">+</button>
@@ -137,24 +129,24 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
     <h3 id="modal-title">新增食材</h3>
     <div class="form-group">
       <label>食材名稱</label>
-      <input type="text" id="m-item" placeholder="例如：鮮奶、高麗菜、雞胸肉">
+      <input type="text" id="m-item" placeholder="例如：體奶、高麗菜、雞胸肉">
     </div>
     <div class="form-group">
       <label>區域</label>
       <select id="m-zone">
         <option value="cold">冷藏室</option>
         <option value="freeze">冷凍庫</option>
-        <option value="door">門片櫃架</option>
+        <option value="door">門片柜架</option>
       </select>
     </div>
     <div class="form-group">
-      <label>到期日 (留空=自動計算)</label>
+      <label>到期日 (留空=自勘計算)</label>
       <input type="date" id="m-expiry">
     </div>
     <div class="btn-row">
       <button class="btn btn-cancel" onclick="closeModal()">取消</button>
-      <button class="btn btn-primary" id="modal-save-btn" onclick="saveItem()">儲存</button>
-      <button class="btn btn-danger" id="modal-del-btn" style="display:none" onclick="deleteItem()">刪除</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="doSave()">儲存</button>
+      <button class="btn btn-danger" id="modal-del-btn" style="display:none" onclick="doDelete()">刪除</button>
     </div>
   </div>
 </div>
@@ -162,153 +154,159 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 <div class="toast" id="toast"></div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxmoehjgtd4pQH3KayjVQysUakbz1BrRcy9m-0Rn5UwgzceR0S0fh-dnDz12-Muypc/exec";
-var currentTab = 'cold', currentGridIndex = 0, currentItemId = '', allItems = [];
-var STORAGE_KEY = 'fridge_items_v2';
-var gridCols = 4;
-const FOOD_DEFAULTS = {"高麗菜": {"cold": 7, "freeze": null}, "空心菜": {"cold": 3, "freeze": null}, "青江菜": {"cold": 4, "freeze": null}, "花椰菜": {"cold": 5, "freeze": null}, "白菜": {"cold": 7, "freeze": null}, "菠菜": {"cold": 5, "freeze": null}, "花瓜": {"cold": 4, "freeze": null}, "苞蔔菜": {"cold": 7, "freeze": null}, "絲絲菜": {"cold": 3, "freeze": null}, "花生芽": {"cold": 5, "freeze": null}, "玉米筍": {"cold": 4, "freeze": null}, "蒜苗": {"cold": 10, "freeze": null}, "蔥": {"cold": 14, "freeze": null}, "薑": {"cold": 14, "freeze": null}, "菇": {"cold": 7, "freeze": null}, "紅蘿蔔": {"cold": 14, "freeze": null}, "黃瓜": {"cold": 10, "freeze": null}, "西瓜": {"cold": 7, "freeze": null}, "豌豆": {"cold": 5, "freeze": null}, "穀類": {"cold": 30, "freeze": 180}, "鮮奶": {"cold": 7, "freeze": 30}, "優酪乳": {"cold": 7, "freeze": 30}, "雞蛋": {"cold": 21, "freeze": null}, "豆腐": {"cold": 5, "freeze": 30}, "豆漿": {"cold": 3, "freeze": 60}, "豆腐皮": {"cold": 7, "freeze": 90}, "臭豆腐": {"cold": 365, "freeze": 365}, "豬肉絲": {"cold": 2, "freeze": 30}, "雞胸肉": {"cold": 2, "freeze": 30}, "緊肉片": {"cold": 2, "freeze": 120}, "牛排": {"cold": 2, "freeze": 90}, "里肌肉": {"cold": 2, "freeze": 90}, "鯖魚": {"cold": 1, "freeze": 90}, "蟹管": {"cold": 1, "freeze": 90}, "蝦子": {"cold": 1, "freeze": 90}, "香腸": {"cold": 14, "freeze": 60}, "貢丸": {"cold": 14, "freeze": 60}, "拉麵": {"cold": 3, "freeze": 90}, "麵條": {"cold": 3, "freeze": 180}, "餐包": {"cold": 3, "freeze": 90}, "沙茶醬": {"cold": 365, "freeze": 365}, "胡椒粉": {"cold": 365, "freeze": 365}, "醬油": {"cold": 365, "freeze": 365}, "奶油": {"cold": 14, "freeze": 120}, "蜜餞": {"cold": 14, "freeze": 180}, "布丁": {"cold": 14, "freeze": 90}, "養樂多": {"cold": 365, "freeze": 365}, "果醬": {"cold": 365, "freeze": 365}, "果凍": {"cold": 7, "freeze": 180}};
-
-/* ====== GRID CONFIG (dynamic cols) ====== */
-function getGridConfig(zone) {
-  var baseTotals = { cold: 12, freeze: 12, door: 8 };
-  var total = baseTotals[zone] || 12;
-  var rows = Math.ceil(total / gridCols);
-  return { rows: rows, cols: gridCols, total: total };
-}
-
-function changeGridSize(val) {
-  gridCols = parseInt(val);
-  document.getElementById('size-val').textContent = val;
-  try { localStorage.setItem('fridge_grid_cols', val); } catch(e) {}
-  renderGrid(currentTab);
-}
-
-/* ====== LOCAL STORAGE ====== */
-function gid() { return 'it_' + Date.now() + '_' + Math.random().toString(36).substr(2,6); }
-function saveStorage() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(allItems)); } catch(e){} }
-function loadStorage() {
-  try {
-    var d = localStorage.getItem(STORAGE_KEY);
-    if (d) { allItems = JSON.parse(d); recalcDays(); return true; }
-  } catch(e){}
-  return false;
-}
-function recalcDays() {
-  var t=new Date(); t.setHours(0,0,0,0);
-  for (var i=0;i<allItems.length;i++) {
-    if (allItems[i].expiry_date) {
-      var e=new Date(allItems[i].expiry_date); e.setHours(0,0,0,0);
-      allItems[i].days_left = Math.ceil((e-t)/(86400000));
-    }
-  }
-}
-
-/* ====== CRUD ====== */
-function addItem(n,z,idx,exp) {
-  var it={id:gid(),item_name:n,storage_zone:z,grid_index:idx,expiry_date:exp,input_date:new Date().toISOString().split('T')[0],status:'在庫',operator_note:'',days_left:null};
-  var t=new Date();t.setHours(0,0,0,0); var e=new Date(exp);e.setHours(0,0,0,0);
-  it.days_left=Math.ceil((e-t)/(86400000)); allItems.push(it); saveStorage(); renderGrid(currentTab);
-}
-function updItem(id,n,z,idx,exp){
-  for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){
-    allItems[i].item_name=n;allItems[i].storage_zone=z;allItems[i].grid_index=idx;allItems[i].expiry_date=exp;
-    var t=new Date();t.setHours(0,0,0,0);var e=new Date(exp);e.setHours(0,0,0,0);
-    allItems[i].days_left=Math.ceil((e-t)/(86400000));saveStorage();renderGrid(currentTab);return;
-  }}
-}
-function delItem(id){for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){allItems.splice(i,1);saveStorage();renderGrid(currentTab);return;}}}
+/* ====== STATE ====== */
+var currentTab='cold', currentGridIndex=0, currentItemId='', allItems=[];
+var STORAGE_KEY='fridge_v3';
+var gridCols=4;
+// Dynamic cell count per zone
+var zoneCells={cold:12, freeze:12, door:8};
+const FOOD_DEFAULTS={"高麗菜": {"cold": 7, "freeze": null}, "空心菜": {"cold": 3, "freeze": null}, "青江菜": {"cold": 4, "freeze": null}, "花椰菜": {"cold": 5, "freeze": null}, "白菜": {"cold": 7, "freeze": null}, "菠菜": {"cold": 5, "freeze": null}, "花瓜": {"cold": 4, "freeze": null}, "苞蔔菜": {"cold": 7, "freeze": null}, "絲絲菜": {"cold": 3, "freeze": null}, "花生芽": {"cold": 5, "freeze": null}, "玉米筍": {"cold": 4, "freeze": null}, "蒜苗": {"cold": 10, "freeze": null}, "蔥": {"cold": 14, "freeze": null}, "薑": {"cold": 14, "freeze": null}, "菇": {"cold": 7, "freeze": null}, "紅蘿蔔": {"cold": 14, "freeze": null}, "黃瓜": {"cold": 10, "freeze": null}, "西瓜": {"cold": 7, "freeze": null}, "豌豆": {"cold": 5, "freeze": null}, "穀類": {"cold": 30, "freeze": 180}, "鮮奶": {"cold": 7, "freeze": 30}, "優酪乳": {"cold": 7, "freeze": 30}, "雞蛋": {"cold": 21, "freeze": null}, "豆腐": {"cold": 5, "freeze": 30}, "豆漿": {"cold": 3, "freeze": 60}, "豆腐皮": {"cold": 7, "freeze": 90}, "臭豆腐": {"cold": 365, "freeze": 365}, "豬肉絲": {"cold": 2, "freeze": 30}, "雞胸肉": {"cold": 2, "freeze": 30}, "緊肉片": {"cold": 2, "freeze": 120}, "牛排": {"cold": 2, "freeze": 90}, "里肌肉": {"cold": 2, "freeze": 90}, "鯖魚": {"cold": 1, "freeze": 90}, "蟹管": {"cold": 1, "freeze": 90}, "蝦子": {"cold": 1, "freeze": 90}, "香腸": {"cold": 14, "freeze": 60}, "貢丸": {"cold": 14, "freeze": 60}, "拉麵": {"cold": 3, "freeze": 90}, "麵條": {"cold": 3, "freeze": 180}, "餐包": {"cold": 3, "freeze": 90}, "沙茶醬": {"cold": 365, "freeze": 365}, "胡椒粉": {"cold": 365, "freeze": 365}, "醬油": {"cold": 365, "freeze": 365}, "奶油": {"cold": 14, "freeze": 120}, "蜜餞": {"cold": 14, "freeze": 180}, "布丁": {"cold": 14, "freeze": 90}, "養樂多": {"cold": 365, "freeze": 365}, "果醬": {"cold": 365, "freeze": 365}, "果凍": {"cold": 7, "freeze": 180}};
 
 /* ====== HELPERS ====== */
+function $(id){return document.getElementById(id);}
+function gid(){return 'it_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);}
+function saveStore(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({items:allItems,cols:gridCols,zones:zoneCells}));}catch(e){}}
+function loadStore(){
+  try{
+    var d=localStorage.getItem(STORAGE_KEY);
+    if(d){var p=JSON.parse(d);allItems=p.items||[];if(p.cols)gridCols=p.cols;if(p.zones)zoneCells=p.zones;recalcDays();return true;}
+  }catch(e){}
+  return false;
+}
+function recalcDays(){var t=new Date();t.setHours(0,0,0,0);
+  for(var i=0;i<allItems.length;i++){if(allItems[i].expiry_date){
+    var e=new Date(allItems[i].expiry_date);e.setHours(0,0,0,0);
+    allItems[i].days_left=Math.ceil((e-t)/86400000);
+  }}
+}
 function getDefExp(name,zone){
   var info=FOOD_DEFAULTS[name];
   if(info&&info[zone]){var d=new Date();d.setDate(d.getDate()+info[zone]);return d.toISOString().split('T')[0];}
   var fb={cold:5,freeze:30,door:14};var d=new Date();d.setDate(d.getDate()+(fb[zone]||7));return d.toISOString().split('T')[0];
 }
 function getColor(dl){if(dl===null||dl===undefined)return'empty';if(dl<=0)return'red';if(dl<=3)return'yellow';return'green';}
+function showToast(msg){var el=$('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2200);}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
-/* ====== DRAG & DROP ====== */
-var dragItem = null, dragEl = null, dragStartZone = null, dragStartIdx = null, longPressTimer = null;
-
-function initDrag(cell, item, zone, idx) {
-  cell.draggable = true;
-  cell.addEventListener('dragstart', function(e) {
-    dragItem = item; dragEl = cell; dragStartZone = zone; dragStartIdx = idx;
-    cell.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', item.id);
-  });
-  cell.addEventListener('dragend', function() {
-    cell.classList.remove('dragging');
-    document.querySelectorAll('.drag-over').forEach(function(el){el.classList.remove('drag-over');});
-    dragItem=null;dragEl=null;dragStartZone=null;dragStartIdx=null;
-  });
-  // Touch long-press for mobile
-  var pressTimer = null;
-  cell.addEventListener('touchstart', function(e) {
-    pressTimer = setTimeout(function() {
-      dragItem = item; dragEl = cell; dragStartZone = zone; dragStartIdx = idx;
-      cell.classList.add('dragging');
-      showToast('拖曳移動到目標格點');
-    }, 400);
-  }, {passive:true});
-  cell.addEventListener('touchend', function() {
-    clearTimeout(pressTimer);
-  });
-  cell.addEventListener('touchmove', function() {
-    clearTimeout(pressTimer);
-  }, {passive:true});
+/* ====== GRID SIZE CONTROLS ====== */
+function onColChange(val){
+  gridCols=parseInt(val);
+  $('cols-val').textContent=val;
+  $('g-'+currentTab).style.gridTemplateColumns='repeat('+val+',1fr)';
+  saveStore();
+}
+function addGridCell(){
+  zoneCells[currentTab]++;
+  updateCellCount();
+  saveStore();
+  renderGrid(currentTab);
+  showToast('已新增 1 格');
+}
+function removeGridCell(){
+  var maxIdx=zoneCells[currentTab]-1;
+  // Check if last cell has an item
+  var item=findItemAt(currentTab,maxIdx);
+  if(item){
+    if(!confirm('最後一格有 [ '+item.item_name+' ]，刪除格點會同時移除該食材，繼續？'))return;
+    // Remove the item
+    for(var i=0;i<allItems.length;i++){if(allItems[i].id===item.id){allItems.splice(i,1);break;}}
+  }
+  if(zoneCells[currentTab]<=2){showToast('至少保留 2 格');return;}
+  zoneCells[currentTab]--;
+  updateCellCount();
+  saveStore();
+  renderGrid(currentTab);
+  showToast('已刪除 1 格');
+}
+function updateCellCount(){
+  $('cell-count').textContent=zoneCells[currentTab]+'格';
 }
 
-function allowDrop(e) { e.preventDefault(); e.dataTransfer.dropEffect='move'; }
+/* ====== CRUD ====== */
+function addItem(n,z,idx,exp){
+  var it={id:gid(),item_name:n,storage_zone:z,grid_index:idx,expiry_date:exp,input_date:new Date().toISOString().split('T')[0],status:'在庫',operator_note:'',days_left:null};
+  var t=new Date();t.setHours(0,0,0,0);var e=new Date(exp);e.setHours(0,0,0,0);
+  it.days_left=Math.ceil((e-t)/86400000);allItems.push(it);saveStore();renderGrid(z);
+}
+function updItem(id,n,z,idx,exp){
+  for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){
+    allItems[i].item_name=n;allItems[i].storage_zone=z;allItems[i].grid_index=idx;allItems[i].expiry_date=exp;
+    var t=new Date();t.setHours(0,0,0,0);var e=new Date(exp);e.setHours(0,0,0,0);
+    allItems[i].days_left=Math.ceil((e-t)/86400000);saveStore();renderGrid(z);return;
+  }}
+}
+function delItem(id){for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){allItems.splice(i,1);saveStore();renderGrid(currentTab);return;}}}
 
-function handleDrop(targetCell, targetZone, targetIdx) {
-  if (!dragItem || !dragEl) return;
-  // Swap positions
-  var targetItem = findItemAt(targetZone, targetIdx);
-  if (targetItem && targetItem.id !== dragItem.id) {
-    // swap
-    var oldZone = dragItem.storage_zone, oldIdx = dragItem.grid_index;
-    dragItem.storage_zone = targetZone; dragItem.grid_index = targetIdx;
-    targetItem.storage_zone = oldZone; targetItem.grid_index = oldIdx;
-  } else if (!targetItem) {
-    // move to empty
-    dragItem.storage_zone = targetZone; dragItem.grid_index = targetIdx;
+/* ====== DRAG & DROP ====== */
+var dragItem=null,dragEl=null,dragStartZ=null,dragStartIdx=null;
+
+function initDrag(cell,item,zone,idx){
+  cell.draggable=true;
+  cell.addEventListener('dragstart',function(e){
+    dragItem=item;dragEl=cell;dragStartZ=zone;dragStartIdx=idx;
+    cell.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',item.id);
+  });
+  cell.addEventListener('dragend',function(){
+    cell.classList.remove('dragging');
+    document.querySelectorAll('.drag-over').forEach(function(el){el.classList.remove('drag-over');});
+    dragItem=null;dragEl=null;dragStartZ=null;dragStartIdx=null;
+  });
+  // Long-press for mobile
+  var pt=null;
+  cell.addEventListener('touchstart',function(e){pt=setTimeout(function(){
+    dragItem=item;dragEl=cell;dragStartZ=zone;dragStartIdx=idx;
+    cell.classList.add('dragging');
+    showToast('拖曳到目標格點');
+  },400);},{passive:true});
+  cell.addEventListener('touchend',function(){clearTimeout(pt);});
+  cell.addEventListener('touchmove',function(){clearTimeout(pt);},{passive:true});
+}
+
+function doDrop(tCell,tZone,tIdx){
+  if(!dragItem)return;
+  var tItem=findItemAt(tZone,tIdx);
+  if(tItem&&tItem.id!==dragItem.id){
+    var oz=dragItem.storage_zone,oi=dragItem.grid_index;
+    dragItem.storage_zone=tZone;dragItem.grid_index=tIdx;
+    tItem.storage_zone=oz;tItem.grid_index=oi;
+  }else if(!tItem){
+    dragItem.storage_zone=tZone;dragItem.grid_index=tIdx;
   }
-  saveStorage();
-  renderGrid(currentTab);
-  showToast('已移動');
+  saveStore();renderGrid(currentTab);showToast('已移動');
 }
 
 /* ====== RENDER ====== */
-function renderGrid(zone) {
-  var config = getGridConfig(zone);
-  var container = document.getElementById('g-' + zone);
-  container.style.gridTemplateColumns = 'repeat('+config.cols+',1fr)';
-  container.innerHTML = '';
-  for (var i = 0; i < config.total; i++) {
-    var item = findItemAt(zone, i);
-    var cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.ondragover = function(){this.classList.add('drag-over');return false;};
-    cell.ondragleave = function(){this.classList.remove('drag-over');};
-    cell.ondrop = (function(z,idx){return function(e){
-      e.preventDefault(); this.classList.remove('drag-over'); handleDrop(this,z,idx);
-    };})(zone,i);
+function renderGrid(zone){
+  var total=zoneCells[zone]||12;
+  var container=$('g-'+zone);
+  container.style.gridTemplateColumns='repeat('+gridCols+',1fr)';
+  container.innerHTML='';
+  for(var i=0;i<total;i++){
+    var item=findItemAt(zone,i);
+    var cell=document.createElement('div');
+    cell.className='cell';
+    cell.ondragover=function(){this.classList.add('drag-over');return false;};
+    cell.ondragleave=function(){this.classList.remove('drag-over');};
+    (function(z,idx,tc){
+      tc.ondrop=function(e){e.preventDefault();tc.classList.remove('drag-over');doDrop(tc,z,idx);};
+    })(zone,i,cell);
 
-    if (item) {
+    if(item){
       var dl=item.days_left,c=getColor(dl);cell.classList.add(c);
-      var h='<div>'+escapeHtml(item.item_name)+'</div>';
+      var h='<div>'+esc(item.item_name)+'</div>';
       if(dl!==null&&dl!==undefined)h+='<div class="days-badge">'+(dl>0?'+'+dl:dl)+'天</div>';
       h+='<span class="drag-hint">☜</span>';
       cell.innerHTML=h;
       cell.onclick=(function(it){return function(){openEditModal(it);};})(item);
       initDrag(cell,item,zone,i);
-    } else {
-      cell.classList.add('empty');cell.innerHTML='+';
+    }else{
+      cell.classList.add('empty';cell.innerHTML='+';
       cell.onclick=(function(z,idx){return function(){openAddAtZone(z,idx);};})(zone,i);
     }
     container.appendChild(cell);
   }
   updateStats();
+  updateCellCount();
 }
 
 function findItemAt(zone,gIdx){
@@ -321,14 +319,15 @@ function updateStats(){
   for(var i=0;i<allItems.length;i++){var c=getColor(allItems[i].days_left);if(c==='green')s++;else if(c==='yellow')w++;else if(c==='red')d++;}
   $('stat-safe').textContent=s;$('stat-warn').textContent=w;$('stat-danger').textContent=d;$('stat-total').textContent=s+w+d;
 }
-function $(id){return document.getElementById(id);}
 
 function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
   document.querySelector('[data-tab="'+tab+'"]').classList.add('on');
   document.querySelectorAll('.grid-wrap').forEach(function(g){g.classList.remove('active');});
-  $('grid-'+tab).classList.add('active');renderGrid(tab);
+  $('grid-'+tab).classList.add('active');
+  $('grid-cols').value=gridCols;$('cols-val').textContent=gridCols;
+  renderGrid(tab);
 }
 
 /* ====== MODAL ====== */
@@ -344,22 +343,23 @@ function openEditModal(it){currentItemId=it.id;currentGridIndex=it.grid_index;
   $('modal-del-btn').style.display='';$('modal-save-btn').onclick=doUpdate;showModal();}
 function closeModal(){$('modal').classList.remove('show');}
 function showModal(){$('modal').classList.add('show');}
-function getNextEmpty(zone){var c=getGridConfig(zone);for(var i=0;i<c.total;i++)if(!findItemAt(zone,i))return i;return 0;}
+function getNextEmpty(zone){var total=zoneCells[zone]||12;for(var i=0;i<total;i++)if(!findItemAt(zone,i))return i;return 0;}
+
 function doSave(){
   var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
   if(!n){showToast('請輸入食材名稱');return;}
-  if(!e)e=getDefExp(n,z);addItem(n,z,currentGridIndex,e);closeModal();showToast('儲存成功！');
+  if(!e)e=getDefExp(n,z);
+  addItem(n,z,currentGridIndex,e);closeModal();showToast('儲存成功！');
 }
 function doUpdate(){
   var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
   if(!n){showToast('請輸入食材名稱');return;}
-  if(!e)e=getDefExp(n,z);updItem(currentItemId,n,z,currentGridIndex,e);closeModal();showToast('更新成功！');
+  if(!e)e=getDefExp(n,z);
+  updItem(currentItemId,n,z,currentGridIndex,e);closeModal();showToast('更新成功！');
 }
-function doDelete(){if(!confirm('確定刪除？'))return;delItem(currentItemId);closeModal();showToast('已刪除');}
-function showToast(msg){var el=$('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2200);}
-function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function doDelete(){if(!confirm('確定刪除 [ '+($('m-item').value||'未命名')+' ] ？'))return;delItem(currentItemId);closeModal();showToast('已刪除');}
 
-/* ====== DEMO (first launch) ====== */
+/* ====== DEMO DATA ====== */
 function showDemo(){
   var now=new Date();
   function off(n){var d=new Date(now);d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
@@ -377,14 +377,17 @@ function showDemo(){
     {id:'d11',item_name:'沙茶醬',storage_zone:'door',grid_index:1,expiry_date:off(300),status:'在庫',days_left:300},
     {id:'d12',item_name:'奶油',storage_zone:'door',grid_index:2,expiry_date:off(45),status:'在庫',days_left:45}
   ];
-  saveStorage();renderGrid(currentTab);
+  saveStore();renderGrid(currentTab);
 }
 
 /* ====== INIT ====== */
 (function(){
-  var savedCols = localStorage.getItem('fridge_grid_cols');
-  if(savedCols){gridCols=parseInt(savedCols);$('grid-size').value=gridCols;$('size-val').textContent=gridCols;}
-  if(loadStorage()){renderGrid(currentTab);}else{showDemo();}
+  if(loadStore()){
+    $('grid-cols').value=gridCols;$('cols-val').textContent=gridCols;
+    renderGrid(currentTab);
+  }else{
+    showDemo();
+  }
 })();
 </script>
 </body>
