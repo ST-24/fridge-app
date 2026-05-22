@@ -21,6 +21,10 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 .tabs{display:flex;background:linear-gradient(180deg,#e8f5e9 0%,#f0faf1 100%);border-bottom:1px solid #c8e6c9}
 .tab{flex:1;text-align:center;padding:12px 0;font-size:13.5px;font-weight:700;color:#6b9080;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s}
 .tab.on{color:#1b4332;border-bottom-color:#2d6a4f;background:rgba(255,255,255,0.6)}
+.zone-manage button:active{opacity:0.8}
+.zone-item{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;margin:2px 0;background:#fff;border:1px solid #ddd;border-radius:6px}
+.zone-item input{border:none;background:transparent;font-size:12px;font-weight:700;flex:1}
+.zone-item .del-btn{color:#c62828;font-size:16px;cursor:pointer;padding:0 4px}
 .legend{display:flex;justify-content:center;gap:14px;padding:8px 0 4px;font-size:11px;color:#777;background:#fafcfb}
 .legend span{display:flex;align-items:center;gap:3px}
 .legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
@@ -90,10 +94,18 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
     <div class="hd3">格點視覺化 · 零摩擦家庭共用</div>
   </div>
 
-  <div class="tabs">
-    <div class="tab on" data-tab="cold" onclick="switchTab('cold')">冷藏室</div>
-    <div class="tab" data-tab="freeze" onclick="switchTab('freeze')">冷凍庫</div>
-    <div class="tab" data-tab="door" onclick="switchTab('door')">門片柜架</div>
+  <div class="tabs" id="zone-tabs"></div>
+  <div class="zone-manage" id="zone-manage" style="display:none;padding:8px 12px;background:#f0f4f0;border-bottom:1px solid #ddd;font-size:11px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-weight:700;color:#555">管理區域</span>
+      <input type="text" id="new-zone-name" placeholder="新區域名稱" style="flex:1;max-width:120px;padding:4px 8px;border:1px solid #ccc;border-radius:6px;font-size:12px">
+      <button onclick="addZone()" style="padding:4px 10px;background:#2d6a4f;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700">新增</button>
+      <button onclick="closeZoneManage()" style="padding:4px 10px;background:#eee;color:#666;border:none;border-radius:6px;font-size:11px">完成</button>
+    </div>
+    <div id="zone-list" style="margin-top:8px"></div>
+  </div>
+  <div class="zone-edit-bar" style="display:flex;justify-content:center;gap:4px;padding:4px;background:#f8faf8">
+    <button onclick="openZoneManage()" style="padding:4px 12px;background:linear-gradient(135deg,#2d6a4f,#52b788);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700">⚙管理區域</button>
   </div>
 
   <div class="legend">
@@ -112,9 +124,7 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
     <span class="lbl" style="margin-left:4px" id="cell-count">12格</span>
   </div>
 
-  <div id="grid-cold" class="grid-wrap active"><div class="grid" id="g-cold"></div></div>
-  <div id="grid-freeze" class="grid-wrap"><div class="grid" id="g-freeze"></div></div>
-  <div id="grid-door" class="grid-wrap"><div class="grid" id="g-door"></div></div>
+  <div id="grids-container"></div>
 
   <div class="stats">
     <div class="stat safe"><div class="num" id="stat-safe">0</div><div class="label">安全</div></div>
@@ -164,21 +174,28 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 
 <script>
 /* ====== STATE ====== */
-var currentTab='cold', currentGridIndex=0, currentItemId='', allItems=[];
-var STORAGE_KEY='fridge_v3';
+var currentZone='', currentGridIndex=0, currentItemId='', allItems=[];
+var STORAGE_KEY='fridge_v4';
 var gridCols=4;
-// Dynamic cell count per zone
-var zoneCells={cold:12, freeze:12, door:8};
-const FOOD_DEFAULTS={"高麗菜": {"cold": 7, "freeze": null}, "空心菜": {"cold": 3, "freeze": null}, "青江菜": {"cold": 4, "freeze": null}, "花椰菜": {"cold": 5, "freeze": null}, "白菜": {"cold": 7, "freeze": null}, "菠菜": {"cold": 5, "freeze": null}, "花瓜": {"cold": 4, "freeze": null}, "苞蔔菜": {"cold": 7, "freeze": null}, "絲絲菜": {"cold": 3, "freeze": null}, "花生芽": {"cold": 5, "freeze": null}, "玉米筍": {"cold": 4, "freeze": null}, "蒜苗": {"cold": 10, "freeze": null}, "蔥": {"cold": 14, "freeze": null}, "薑": {"cold": 14, "freeze": null}, "菇": {"cold": 7, "freeze": null}, "紅蘿蔔": {"cold": 14, "freeze": null}, "黃瓜": {"cold": 10, "freeze": null}, "西瓜": {"cold": 7, "freeze": null}, "豌豆": {"cold": 5, "freeze": null}, "穀類": {"cold": 30, "freeze": 180}, "鮮奶": {"cold": 7, "freeze": 30}, "優酪乳": {"cold": 7, "freeze": 30}, "雞蛋": {"cold": 21, "freeze": null}, "豆腐": {"cold": 5, "freeze": 30}, "豆漿": {"cold": 3, "freeze": 60}, "豆腐皮": {"cold": 7, "freeze": 90}, "臭豆腐": {"cold": 365, "freeze": 365}, "豬肉絲": {"cold": 2, "freeze": 30}, "雞胸肉": {"cold": 2, "freeze": 30}, "緊肉片": {"cold": 2, "freeze": 120}, "牛排": {"cold": 2, "freeze": 90}, "里肌肉": {"cold": 2, "freeze": 90}, "鯖魚": {"cold": 1, "freeze": 90}, "蟹管": {"cold": 1, "freeze": 90}, "蝦子": {"cold": 1, "freeze": 90}, "香腸": {"cold": 14, "freeze": 60}, "貢丸": {"cold": 14, "freeze": 60}, "拉麵": {"cold": 3, "freeze": 90}, "麵條": {"cold": 3, "freeze": 180}, "餐包": {"cold": 3, "freeze": 90}, "沙茶醬": {"cold": 365, "freeze": 365}, "胡椒粉": {"cold": 365, "freeze": 365}, "醬油": {"cold": 365, "freeze": 365}, "奶油": {"cold": 14, "freeze": 120}, "蜜餞": {"cold": 14, "freeze": 180}, "布丁": {"cold": 14, "freeze": 90}, "養樂多": {"cold": 365, "freeze": 365}, "果醬": {"cold": 365, "freeze": 365}, "果凍": {"cold": 7, "freeze": 180}};
+var zones=[]; // [{id:'cold',name:'冷藏室',cells:12}, ...]
+
+var defaultZones=[
+  {id:'cold',name:'冷藏室',cells:12},
+  {id:'freeze',name:'冷凍庫',cells:12},
+  {id:'door',name:'門片柜架',cells:8}
+];
+
+const FOOD_DEFAULTS = {"高麗菜": {"cold": 7, "freeze": null}, "空心菜": {"cold": 3, "freeze": null}, "青江菜": {"cold": 4, "freeze": null}, "花椰菜": {"cold": 5, "freeze": null}, "白菜": {"cold": 7, "freeze": null}, "菠菜": {"cold": 5, "freeze": null}, "花瓜": {"cold": 4, "freeze": null}, "芭蓺菜": {"cold": 7, "freeze": null}, "絲絲菜": {"cold": 3, "freeze": null}, "花生芽": {"cold": 5, "freeze": null}, "玉米筍": {"cold": 4, "freeze": null}, "蒜苗": {"cold": 10, "freeze": null}, "蔥": {"cold": 14, "freeze": null}, "薛": {"cold": 14, "freeze": null}, "菇": {"cold": 7, "freeze": null}, "紅蘿蔔": {"cold": 14, "freeze": null}, "黃瓜": {"cold": 10, "freeze": null}, "西瓜": {"cold": 7, "freeze": null}, "豌豆": {"cold": 5, "freeze": null}, "穀類": {"cold": 30, "freeze": 180}, "體奶": {"cold": 7, "freeze": 30}, "優酸乳": {"cold": 7, "freeze": 30}, "雞蛋": {"cold": 21, "freeze": null}, "豆腐": {"cold": 5, "freeze": 30}, "豆漿": {"cold": 3, "freeze": 60}, "豆腐皮": {"cold": 7, "freeze": 90}, "臭豆腐": {"cold": 365, "freeze": 365}, "豬肉絲": {"cold": 2, "freeze": 30}, "雞胸肉": {"cold": 2, "freeze": 30}, "緊肉片": {"cold": 2, "freeze": 120}, "牛排": {"cold": 2, "freeze": 90}, "里肌肉": {"cold": 2, "freeze": 90}, "鮭魚": {"cold": 1, "freeze": 90}, "蟹管": {"cold": 1, "freeze": 90}, "蝦子": {"cold": 1, "freeze": 90}, "香腸": {"cold": 14, "freeze": 60}, "貢丸": {"cold": 14, "freeze": 60}, "拉麵": {"cold": 3, "freeze": 90}, "麵條": {"cold": 3, "freeze": 180}, "餐包": {"cold": 3, "freeze": 90}, "沙茶醬": {"cold": 365, "freeze": 365}, "胡椒粉": {"cold": 365, "freeze": 365}, "醬油": {"cold": 365, "freeze": 365}, "奶油": {"cold": 14, "freeze": 120}, "蜜餐": {"cold": 14, "freeze": 180}, "布丁": {"cold": 14, "freeze": 90}, "養樂多": {"cold": 365, "freeze": 365}, "果醬": {"cold": 365, "freeze": 365}, "果凍": {"cold": 7, "freeze": 180}};
 
 /* ====== HELPERS ====== */
 function $(id){return document.getElementById(id);}
 function gid(){return 'it_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);}
-function saveStore(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({items:allItems,cols:gridCols,zones:zoneCells}));}catch(e){}}
+function zid(){return 'zn_'+Date.now()+'_'+Math.random().toString(36).substr(2,4);}
+function saveStore(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({items:allItems,cols:gridCols,zones:zones}));}catch(e){}}
 function loadStore(){
   try{
     var d=localStorage.getItem(STORAGE_KEY);
-    if(d){var p=JSON.parse(d);allItems=p.items||[];if(p.cols)gridCols=p.cols;if(p.zones)zoneCells=p.zones;recalcDays();return true;}
+    if(d){var p=JSON.parse(d);allItems=p.items||[];if(p.cols)gridCols=p.cols;if(p.zones&&p.zones.length>0)zones=p.zones;recalcDays();return true;}
   }catch(e){}
   return false;
 }
@@ -197,45 +214,117 @@ function getColor(dl){if(dl===null||dl===undefined)return'empty';if(dl<=0)return
 function showToast(msg){var el=$('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2200);}
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
+/* ====== ZONE MANAGEMENT ====== */
+function renderZoneTabs(){
+  var container=$('zone-tabs');
+  container.innerHTML='';
+  zones.forEach(function(z,i){
+    var tab=document.createElement('div');
+    tab.className='tab'+(currentZone===z.id?' on':'');
+    tab.textContent=z.name;
+    tab.onclick=function(){switchTab(z.id);};
+    container.appendChild(tab);
+  });
+}
+
+function renderZoneList(){
+  var container=$('zone-list');
+  container.innerHTML='';
+  zones.forEach(function(z){
+    var item=document.createElement('div');
+    item.className='zone-item';
+    item.innerHTML='<input type="text" value="'+esc(z.name)+'" onchange="renameZone(''+z.id+'',this.value)">'+
+      '<span style="font-size:10px;color:#888">'+z.cells+'格</span>'+
+      '<span class="del-btn" onclick="removeZone(''+z.id+'')">×</span>';
+    container.appendChild(item);
+  });
+}
+
+function addZone(){
+  var name=$('new-zone-name').value.trim();
+  if(!name){showToast('請輸入區域名稱');return;}
+  var newZ={id:zid(),name:name,cells:4};
+  zones.push(newZ);
+  $('new-zone-name').value='';
+  saveStore();
+  renderZoneTabs();
+  renderZoneList();
+  switchTab(newZ.id);
+  showToast('已新增 '+name);
+}
+
+function removeZone(zid){
+  if(zones.length<=1){showToast('至少保留 1 個區域');return;}
+  var z=zones.find(function(z){return z.id===zid;});
+  if(!z)return;
+  var hasItems=allItems.some(function(it){return it.storage_zone===zid;});
+  if(hasItems){if(!confirm('['+z.name+'] 有食材，刪除區域會同時移除這些食材，繼續？'))return;}
+  // Remove items in this zone
+  allItems=allItems.filter(function(it){return it.storage_zone!==zid;});
+  zones=zones.filter(function(z){return z.id!==zid;});
+  saveStore();
+  renderZoneTabs();
+  renderZoneList();
+  if(currentZone===zid){switchTab(zones[0].id);}else{renderGrid(currentZone);}
+  showToast('已刪除');
+}
+
+function renameZone(zid,newName){
+  var z=zones.find(function(z){return z.id===zid;});
+  if(z){z.name=newName;saveStore();renderZoneTabs();}
+}
+
+function openZoneManage(){$('zone-manage').style.display='block';renderZoneList();}
+function closeZoneManage(){$('zone-manage').style.display='none';}
+
 /* ====== GRID SIZE CONTROLS ====== */
 function onColChange(val){
   gridCols=parseInt(val);
   $('cols-val').textContent=val;
-  $('g-'+currentTab).style.gridTemplateColumns='repeat('+val+',1fr)';
+  $('g-'+currentZone).style.gridTemplateColumns='repeat('+val+',1fr)';
   saveStore();
 }
 function addGridCell(){
-  zoneCells[currentTab]++;
-  updateCellCount();
-  saveStore();
-  renderGrid(currentTab);
-  showToast('已新增 1 格');
+  var z=zones.find(function(z){return z.id===currentZone;});
+  if(z){z.cells++;updateCellCount();saveStore();renderGrid(currentZone);showToast('已新增 1 格');}
 }
 function removeGridCell(){
-  var maxIdx=zoneCells[currentTab]-1;
-  // Check if last cell has an item
-  var item=findItemAt(currentTab,maxIdx);
+  var z=zones.find(function(z){return z.id===currentZone;});
+  if(!z)return;
+  if(z.cells<=2){showToast('至少保留 2 格');return;}
+  var maxIdx=z.cells-1;
+  var item=findItemAt(currentZone,maxIdx);
   if(item){
-    if(!confirm('最後一格有 [ '+item.item_name+' ]，刪除格點會同時移除該食材，繼續？'))return;
-    // Remove the item
+    if(!confirm('最後一格有 [ '+item.item_name+' ]，繼續？'))return;
     for(var i=0;i<allItems.length;i++){if(allItems[i].id===item.id){allItems.splice(i,1);break;}}
   }
-  if(zoneCells[currentTab]<=2){showToast('至少保留 2 格');return;}
-  zoneCells[currentTab]--;
-  updateCellCount();
-  saveStore();
-  renderGrid(currentTab);
-  showToast('已刪除 1 格');
+  z.cells--;
+  updateCellCount();saveStore();renderGrid(currentZone);showToast('已刪除 1 格');
 }
 function updateCellCount(){
-  $('cell-count').textContent=zoneCells[currentTab]+'格';
+  var z=zones.find(function(z){return z.id===currentZone;});
+  if(z)$('cell-count').textContent=z.cells+'格';
+}
+
+/* ====== RENDER GRIDS ====== */
+function renderGridsContainer(){
+  var container=$('grids-container');
+  container.innerHTML='';
+  zones.forEach(function(z){
+    var wrap=document.createElement('div');
+    wrap.id='grid-'+z.id;
+    wrap.className='grid-wrap'+(currentZone===z.id?' active':'');
+    wrap.innerHTML='<div class="grid" id="g-'+z.id+'"></div>';
+    container.appendChild(wrap);
+  });
+  renderGrid(currentZone);
 }
 
 /* ====== CRUD ====== */
 function addItem(n,z,idx,exp,price){
-  var it={id:gid(),item_name:n,storage_zone:z,grid_index:idx,expiry_date:exp,input_date:new Date().toISOString().split('T')[0],status:'在庫',operator_note:'',days_left:null};
+  var it={id:gid(),item_name:n,storage_zone:z,grid_index:idx,expiry_date:exp,input_date:new Date().toISOString().split('T')[0],status:'在庫',operator_note:'',days_left:null,price:price||0};
   var t=new Date();t.setHours(0,0,0,0);var e=new Date(exp);e.setHours(0,0,0,0);
-  it.days_left=Math.ceil((e-t)/86400000);it.price=price||0;allItems.push(it);saveStore();renderGrid(z);
+  it.days_left=Math.ceil((e-t)/86400000);allItems.push(it);saveStore();renderGrid(z);
 }
 function updItem(id,n,z,idx,exp,price){
   for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){
@@ -244,61 +333,45 @@ function updItem(id,n,z,idx,exp,price){
     allItems[i].days_left=Math.ceil((e-t)/86400000);saveStore();renderGrid(z);return;
   }}
 }
-function delItem(id){for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){allItems.splice(i,1);saveStore();renderGrid(currentTab);return;}}}
+function delItem(id){for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){allItems.splice(i,1);saveStore();renderGrid(currentZone);return;}}}
 
 /* ====== DRAG & DROP ====== */
-var dragItem=null,dragEl=null,dragStartZ=null,dragStartIdx=null;
-
+var dragItem=null,dragEl=null;
 function initDrag(cell,item,zone,idx){
   cell.draggable=true;
-  cell.addEventListener('dragstart',function(e){
-    dragItem=item;dragEl=cell;dragStartZ=zone;dragStartIdx=idx;
-    cell.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',item.id);
-  });
-  cell.addEventListener('dragend',function(){
-    cell.classList.remove('dragging');
-    document.querySelectorAll('.drag-over').forEach(function(el){el.classList.remove('drag-over');});
-    dragItem=null;dragEl=null;dragStartZ=null;dragStartIdx=null;
-  });
-  // Long-press for mobile
+  cell.addEventListener('dragstart',function(e){dragItem=item;dragEl=cell;cell.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+  cell.addEventListener('dragend',function(){cell.classList.remove('dragging');document.querySelectorAll('.drag-over').forEach(function(el){el.classList.remove('drag-over');});dragItem=null;dragEl=null;});
   var pt=null;
-  cell.addEventListener('touchstart',function(e){pt=setTimeout(function(){
-    dragItem=item;dragEl=cell;dragStartZ=zone;dragStartIdx=idx;
-    cell.classList.add('dragging');
-    showToast('拖曳到目標格點');
-  },400);},{passive:true});
+  cell.addEventListener('touchstart',function(e){pt=setTimeout(function(){dragItem=item;dragEl=cell;cell.classList.add('dragging');showToast('拖曳到目標格點');},400);},{passive:true});
   cell.addEventListener('touchend',function(){clearTimeout(pt);});
   cell.addEventListener('touchmove',function(){clearTimeout(pt);},{passive:true});
 }
-
 function doDrop(tCell,tZone,tIdx){
   if(!dragItem)return;
   var tItem=findItemAt(tZone,tIdx);
-  if(tItem&&tItem.id!==dragItem.id){
-    var oz=dragItem.storage_zone,oi=dragItem.grid_index;
-    dragItem.storage_zone=tZone;dragItem.grid_index=tIdx;
-    tItem.storage_zone=oz;tItem.grid_index=oi;
-  }else if(!tItem){
-    dragItem.storage_zone=tZone;dragItem.grid_index=tIdx;
-  }
-  saveStore();renderGrid(currentTab);showToast('已移動');
+  if(tItem&&tItem.id!==dragItem.id){var oz=dragItem.storage_zone,oi=dragItem.grid_index;dragItem.storage_zone=tZone;dragItem.grid_index=tIdx;tItem.storage_zone=oz;tItem.grid_index=oi;}
+  else if(!tItem){dragItem.storage_zone=tZone;dragItem.grid_index=tIdx;}
+  saveStore();renderGrid(currentZone);showToast('已移動');
 }
 
 /* ====== RENDER ====== */
-function renderGrid(zone){
-  var total=zoneCells[zone]||12;
-  var container=$('g-'+zone);
+function renderGrid(zoneId){
+  var z=zones.find(function(z){return z.id===zoneId;});
+  if(!z)return;
+  var total=z.cells||12;
+  var container=$('g-'+zoneId);
+  if(!container)return;
   container.style.gridTemplateColumns='repeat('+gridCols+',1fr)';
   container.innerHTML='';
   for(var i=0;i<total;i++){
-    var item=findItemAt(zone,i);
+    var item=findItemAt(zoneId,i);
     var cell=document.createElement('div');
     cell.className='cell';
     cell.ondragover=function(){this.classList.add('drag-over');return false;};
     cell.ondragleave=function(){this.classList.remove('drag-over');};
-    (function(z,idx,tc){
-      tc.ondrop=function(e){e.preventDefault();tc.classList.remove('drag-over');doDrop(tc,z,idx);};
-    })(zone,i,cell);
+    (function(zid,idx,tc){
+      tc.ondrop=function(e){e.preventDefault();tc.classList.remove('drag-over');doDrop(tc,zid,idx);};
+    })(zoneId,i,cell);
 
     if(item){
       var dl=item.days_left,c=getColor(dl);cell.classList.add(c);
@@ -308,10 +381,10 @@ function renderGrid(zone){
       h+='<span class="drag-hint">☜</span>';
       cell.innerHTML=h;
       cell.onclick=(function(it){return function(){openEditModal(it);};})(item);
-      initDrag(cell,item,zone,i);
+      initDrag(cell,item,zoneId,i);
     }else{
       cell.classList.add('empty');cell.innerHTML='+';
-      cell.onclick=(function(z,idx){return function(){openAddAtZone(z,idx);};})(zone,i);
+      cell.onclick=(function(zid,idx){return function(){openAddAtZone(zid,idx);};})(zoneId,i);
     }
     container.appendChild(cell);
   }
@@ -325,49 +398,56 @@ function findItemAt(zone,gIdx){
 }
 
 function updateStats(){
-  var s=0,w=0,d=0;
-  for(var i=0;i<allItems.length;i++){var c=getColor(allItems[i].days_left);if(c==='green')s++;else if(c==='yellow')w++;else if(c==='red')d++;}
-  $('stat-safe').textContent=s;$('stat-warn').textContent=w;$('stat-danger').textContent=d;$('stat-total').textContent=s+w+d;var cost=0;for(var j=0;j<allItems.length;j++){cost+=allItems[j].price||0;}$('stat-cost').textContent='$'+cost;
+  var s=0,w=0,d=0,cost=0;
+  for(var i=0;i<allItems.length;i++){var c=getColor(allItems[i].days_left);if(c==='green')s++;else if(c==='yellow')w++;else if(c==='red')d++;cost+=allItems[i].price||0;}
+  $('stat-safe').textContent=s;$('stat-warn').textContent=w;$('stat-danger').textContent=d;$('stat-total').textContent=s+w+d;$('stat-cost').textContent='$'+cost;
 }
 
-function switchTab(tab){
-  currentTab=tab;
+function switchTab(zoneId){
+  currentZone=zoneId;
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
-  document.querySelector('[data-tab="'+tab+'"]').classList.add('on');
   document.querySelectorAll('.grid-wrap').forEach(function(g){g.classList.remove('active');});
-  $('grid-'+tab).classList.add('active');
+  var tab=document.querySelector('[data-tab="'+zoneId+'"]');
+  // Find tab by index since we don't have data-tab on dynamic tabs
+  var zIdx=zones.findIndex(function(z){return z.id===zoneId;});
+  if(zIdx>=0){var tabs=document.querySelectorAll('.tab');if(tabs[zIdx])tabs[zIdx].classList.add('on');}
+  var wrap=$('grid-'+zoneId);if(wrap)wrap.classList.add('active');
   $('grid-cols').value=gridCols;$('cols-val').textContent=gridCols;
-  renderGrid(tab);
+  renderGrid(zoneId);
 }
 
 /* ====== MODAL ====== */
-function openAddModal(){currentItemId='';currentGridIndex=getNextEmpty(currentTab);
-  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=currentTab;$('m-expiry').value='';$('m-price').value='';
+function openAddModal(){currentItemId='';currentGridIndex=getNextEmpty(currentZone);
+  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').innerHTML=zones.map(function(z){return'<option value="'+z.id+'">'+z.name+'</option>';}).join('');
+  $('m-zone').value=currentZone;$('m-expiry').value='';$('m-price').value='';
   $('modal-del-btn').style.display='none';$('modal-save-btn').onclick=doSave;showModal();}
-function openAddAtZone(z,idx){currentGridIndex=idx;currentItemId='';
-  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=z;$('m-expiry').value='';$('m-price').value='';
+function openAddAtZone(zid,idx){currentGridIndex=idx;currentItemId='';
+  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').innerHTML=zones.map(function(z){return'<option value="'+z.id+'">'+z.name+'</option>';}).join('');
+  $('m-zone').value=zid;$('m-expiry').value='';$('m-price').value='';
   $('modal-del-btn').style.display='none';$('modal-save-btn').onclick=doSave;showModal();}
 function openEditModal(it){currentItemId=it.id;currentGridIndex=it.grid_index;
-  $('modal-title').textContent='編輯食材';$('m-item').value=it.item_name;$('m-zone').value=it.storage_zone;
+  $('modal-title').textContent='編輯食材';$('m-item').value=it.item_name;
+  $('m-zone').innerHTML=zones.map(function(z){return'<option value="'+z.id+'">'+z.name+'</option>';}).join('');
+  $('m-zone').value=it.storage_zone;
   $('m-expiry').value=it.expiry_date?it.expiry_date.split(' ')[0]:'';$('m-price').value=it.price||'';
   $('modal-del-btn').style.display='';$('modal-save-btn').onclick=doUpdate;showModal();}
 function closeModal(){$('modal').classList.remove('show');}
 function showModal(){$('modal').classList.add('show');}
-function getNextEmpty(zone){var total=zoneCells[zone]||12;for(var i=0;i<total;i++)if(!findItemAt(zone,i))return i;return 0;}
+function getNextEmpty(zoneId){var z=zones.find(function(z){return z.id===zoneId;});if(!z)return 0;for(var i=0;i<z.cells;i++)if(!findItemAt(zoneId,i))return i;return 0;}
 
 function doSave(){
-  var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
+  var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value,p=parseInt($('m-price').value)||0;
   if(!n){showToast('請輸入食材名稱');return;}
   if(!e)e=getDefExp(n,z);
-  addItem(n,z,currentGridIndex,e,parseInt($('m-price').value)||0);closeModal();showToast('儲存成功！');
+  addItem(n,z,currentGridIndex,e,p);closeModal();showToast('儲存成功！');
 }
 function doUpdate(){
-  var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
+  var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value,p=parseInt($('m-price').value)||0;
   if(!n){showToast('請輸入食材名稱');return;}
   if(!e)e=getDefExp(n,z);
-  updItem(currentItemId,n,z,currentGridIndex,e,parseInt($('m-price').value)||0);closeModal();showToast('更新成功！');
+  updItem(currentItemId,n,z,currentGridIndex,e,p);closeModal();showToast('更新成功！');
 }
-function doDelete(){if(!confirm('確定刪除 [ '+($('m-item').value||'未命名')+' ] ？'))return;delItem(currentItemId);closeModal();showToast('已刪除');}
+function doDelete(){if(!confirm('確定刪除？'))return;delItem(currentItemId);closeModal();showToast('已刪除');}
 
 /* ====== DEMO DATA ====== */
 function showDemo(){
@@ -376,28 +456,32 @@ function showDemo(){
   allItems=[
     {id:'d1',item_name:'體奶',storage_zone:'cold',grid_index:0,expiry_date:off(5),status:'在庫',days_left:5,price:85},
     {id:'d2',item_name:'高麗菜',storage_zone:'cold',grid_index:1,expiry_date:off(2),status:'在庫',days_left:2,price:45},
-    {id:'d3',item_name:'麚蛋',storage_zone:'cold',grid_index:2,expiry_date:off(-1),status:'在庫',days_left:-1},
-    {id:'d4',item_name:'豆腐',storage_zone:'cold',grid_index:3,expiry_date:off(4),status:'在庫',days_left:4},
+    {id:'d3',item_name:'麚蛋',storage_zone:'cold',grid_index:2,expiry_date:off(-1),status:'在庫',days_left:-1,price:50},
+    {id:'d4',item_name:'豆腐',storage_zone:'cold',grid_index:3,expiry_date:off(4),status:'在庫',days_left:4,price:30},
     {id:'d5',item_name:'雞胸肉',storage_zone:'cold',grid_index:4,expiry_date:off(1),status:'在庫',days_left:1,price:120},
-    {id:'d6',item_name:'黃瓜',storage_zone:'cold',grid_index:5,expiry_date:off(8),status:'在庫',days_left:8},
+    {id:'d6',item_name:'黃瓜',storage_zone:'cold',grid_index:5,expiry_date:off(8),status:'在庫',days_left:8,price:25},
     {id:'d7',item_name:'緊肉片',storage_zone:'freeze',grid_index:0,expiry_date:off(25),status:'在庫',days_left:25,price:150},
-    {id:'d8',item_name:'鮭魚',storage_zone:'freeze',grid_index:1,expiry_date:off(60),status:'在庫',days_left:60},
-    {id:'d9',item_name:'蝴蝶麵',storage_zone:'freeze',grid_index:2,expiry_date:off(3),status:'在庫',days_left:3},
-    {id:'d10',item_name:'香腸',storage_zone:'door',grid_index:0,expiry_date:off(10),status:'在庫',days_left:10},
-    {id:'d11',item_name:'沙茶醬',storage_zone:'door',grid_index:1,expiry_date:off(300),status:'在庫',days_left:300},
-    {id:'d12',item_name:'奶油',storage_zone:'door',grid_index:2,expiry_date:off(45),status:'在庫',days_left:45}
+    {id:'d8',item_name:'鮭魚',storage_zone:'freeze',grid_index:1,expiry_date:off(60),status:'在庫',days_left:60,price:180},
+    {id:'d9',item_name:'蝴蝶麵',storage_zone:'freeze',grid_index:2,expiry_date:off(3),status:'在庫',days_left:3,price:35},
+    {id:'d10',item_name:'香腸',storage_zone:'door',grid_index:0,expiry_date:off(10),status:'在庫',days_left:10,price:120},
+    {id:'d11',item_name:'沙茶醬',storage_zone:'door',grid_index:1,expiry_date:off(300),status:'在庫',days_left:300,price:85},
+    {id:'d12',item_name:'奶油',storage_zone:'door',grid_index:2,expiry_date:off(45),status:'在庫',days_left:45,price:65}
   ];
-  saveStore();renderGrid(currentTab);
+  saveStore();renderGrid(currentZone);
 }
 
 /* ====== INIT ====== */
 (function(){
   if(loadStore()){
-    $('grid-cols').value=gridCols;$('cols-val').textContent=gridCols;
-    renderGrid(currentTab);
+    // loaded from storage
   }else{
+    zones=JSON.parse(JSON.stringify(defaultZones));
     showDemo();
   }
+  currentZone=zones[0].id;
+  renderZoneTabs();
+  renderGridsContainer();
+  $('grid-cols').value=gridCols;$('cols-val').textContent=gridCols;
 })();
 </script>
 </body>
