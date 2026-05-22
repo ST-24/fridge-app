@@ -55,6 +55,10 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
 .stat .num{font-size:22px;font-weight:900}
 .stat .label{font-size:10px;color:#888;margin-top:1px}
 .stat.safe .num{color:#2d6a4f}.stat.warn .num{color:#e67700}.stat.danger .num{color:#c1121f}.stat.total .num{color:#555}
+.price-tag{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:#666;background:rgba(255,255,255,0.7);padding:1px 5px;border-radius:6px;white-space:nowrap}
+.cell.green .price-tag{color:#1b4332;background:rgba(255,255,255,0.5)}
+.cell.yellow .price-tag{color:#664d03;background:rgba(255,255,255,0.5)}
+.cell.red .price-tag{color:#900c20;background:rgba(255,255,255,0.5)}
 .footer-note{text-align:center;font-size:10px;color:#aaa;padding:8px 0 14px;background:#fafcfb}
 
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center}
@@ -117,6 +121,7 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
     <div class="stat warn"><div class="num" id="stat-warn">0</div><div class="label">即期</div></div>
     <div class="stat danger"><div class="num" id="stat-danger">0</div><div class="label">過期</div></div>
     <div class="stat total"><div class="num" id="stat-total">0</div><div class="label">總數</div></div>
+    <div class="stat total"><div class="num" id="stat-cost" style="font-size:14px">$0</div><div class="label">總金額</div></div>
   </div>
 
   <div class="footer-note">長拖格點移動 · 點擊編輯 · + 新增</div>
@@ -142,6 +147,10 @@ body{font-family:-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;bac
     <div class="form-group">
       <label>到期日 (留空=自勘計算)</label>
       <input type="date" id="m-expiry">
+    </div>
+    <div class="form-group">
+      <label>金額 (台幣)</label>
+      <input type="number" id="m-price" placeholder="例如：150" min="0" step="1">
     </div>
     <div class="btn-row">
       <button class="btn btn-cancel" onclick="closeModal()">取消</button>
@@ -223,14 +232,14 @@ function updateCellCount(){
 }
 
 /* ====== CRUD ====== */
-function addItem(n,z,idx,exp){
+function addItem(n,z,idx,exp,price){
   var it={id:gid(),item_name:n,storage_zone:z,grid_index:idx,expiry_date:exp,input_date:new Date().toISOString().split('T')[0],status:'在庫',operator_note:'',days_left:null};
   var t=new Date();t.setHours(0,0,0,0);var e=new Date(exp);e.setHours(0,0,0,0);
-  it.days_left=Math.ceil((e-t)/86400000);allItems.push(it);saveStore();renderGrid(z);
+  it.days_left=Math.ceil((e-t)/86400000);it.price=price||0;allItems.push(it);saveStore();renderGrid(z);
 }
-function updItem(id,n,z,idx,exp){
+function updItem(id,n,z,idx,exp,price){
   for(var i=0;i<allItems.length;i++){if(allItems[i].id===id){
-    allItems[i].item_name=n;allItems[i].storage_zone=z;allItems[i].grid_index=idx;allItems[i].expiry_date=exp;
+    allItems[i].item_name=n;allItems[i].storage_zone=z;allItems[i].grid_index=idx;allItems[i].expiry_date=exp;allItems[i].price=price||0;
     var t=new Date();t.setHours(0,0,0,0);var e=new Date(exp);e.setHours(0,0,0,0);
     allItems[i].days_left=Math.ceil((e-t)/86400000);saveStore();renderGrid(z);return;
   }}
@@ -295,6 +304,7 @@ function renderGrid(zone){
       var dl=item.days_left,c=getColor(dl);cell.classList.add(c);
       var h='<div>'+esc(item.item_name)+'</div>';
       if(dl!==null&&dl!==undefined)h+='<div class="days-badge">'+(dl>0?'+'+dl:dl)+'天</div>';
+      if(item.price)h+='<div class="price-tag">$'+item.price+'</div>';
       h+='<span class="drag-hint">☜</span>';
       cell.innerHTML=h;
       cell.onclick=(function(it){return function(){openEditModal(it);};})(item);
@@ -317,7 +327,7 @@ function findItemAt(zone,gIdx){
 function updateStats(){
   var s=0,w=0,d=0;
   for(var i=0;i<allItems.length;i++){var c=getColor(allItems[i].days_left);if(c==='green')s++;else if(c==='yellow')w++;else if(c==='red')d++;}
-  $('stat-safe').textContent=s;$('stat-warn').textContent=w;$('stat-danger').textContent=d;$('stat-total').textContent=s+w+d;
+  $('stat-safe').textContent=s;$('stat-warn').textContent=w;$('stat-danger').textContent=d;$('stat-total').textContent=s+w+d;var cost=0;for(var j=0;j<allItems.length;j++){cost+=allItems[j].price||0;}$('stat-cost').textContent='$'+cost;
 }
 
 function switchTab(tab){
@@ -332,14 +342,14 @@ function switchTab(tab){
 
 /* ====== MODAL ====== */
 function openAddModal(){currentItemId='';currentGridIndex=getNextEmpty(currentTab);
-  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=currentTab;$('m-expiry').value='';
+  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=currentTab;$('m-expiry').value='';$('m-price').value='';
   $('modal-del-btn').style.display='none';$('modal-save-btn').onclick=doSave;showModal();}
 function openAddAtZone(z,idx){currentGridIndex=idx;currentItemId='';
-  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=z;$('m-expiry').value='';
+  $('modal-title').textContent='新增食材';$('m-item').value='';$('m-zone').value=z;$('m-expiry').value='';$('m-price').value='';
   $('modal-del-btn').style.display='none';$('modal-save-btn').onclick=doSave;showModal();}
 function openEditModal(it){currentItemId=it.id;currentGridIndex=it.grid_index;
   $('modal-title').textContent='編輯食材';$('m-item').value=it.item_name;$('m-zone').value=it.storage_zone;
-  $('m-expiry').value=it.expiry_date?it.expiry_date.split(' ')[0]:'';
+  $('m-expiry').value=it.expiry_date?it.expiry_date.split(' ')[0]:'';$('m-price').value=it.price||'';
   $('modal-del-btn').style.display='';$('modal-save-btn').onclick=doUpdate;showModal();}
 function closeModal(){$('modal').classList.remove('show');}
 function showModal(){$('modal').classList.add('show');}
@@ -349,13 +359,13 @@ function doSave(){
   var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
   if(!n){showToast('請輸入食材名稱');return;}
   if(!e)e=getDefExp(n,z);
-  addItem(n,z,currentGridIndex,e);closeModal();showToast('儲存成功！');
+  addItem(n,z,currentGridIndex,e,parseInt($('m-price').value)||0);closeModal();showToast('儲存成功！');
 }
 function doUpdate(){
   var n=$('m-item').value.trim(),z=$('m-zone').value,e=$('m-expiry').value;
   if(!n){showToast('請輸入食材名稱');return;}
   if(!e)e=getDefExp(n,z);
-  updItem(currentItemId,n,z,currentGridIndex,e);closeModal();showToast('更新成功！');
+  updItem(currentItemId,n,z,currentGridIndex,e,parseInt($('m-price').value)||0);closeModal();showToast('更新成功！');
 }
 function doDelete(){if(!confirm('確定刪除 [ '+($('m-item').value||'未命名')+' ] ？'))return;delItem(currentItemId);closeModal();showToast('已刪除');}
 
@@ -364,13 +374,13 @@ function showDemo(){
   var now=new Date();
   function off(n){var d=new Date(now);d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
   allItems=[
-    {id:'d1',item_name:'體奶',storage_zone:'cold',grid_index:0,expiry_date:off(5),status:'在庫',days_left:5},
-    {id:'d2',item_name:'高麗菜',storage_zone:'cold',grid_index:1,expiry_date:off(2),status:'在庫',days_left:2},
+    {id:'d1',item_name:'體奶',storage_zone:'cold',grid_index:0,expiry_date:off(5),status:'在庫',days_left:5,price:85},
+    {id:'d2',item_name:'高麗菜',storage_zone:'cold',grid_index:1,expiry_date:off(2),status:'在庫',days_left:2,price:45},
     {id:'d3',item_name:'麚蛋',storage_zone:'cold',grid_index:2,expiry_date:off(-1),status:'在庫',days_left:-1},
     {id:'d4',item_name:'豆腐',storage_zone:'cold',grid_index:3,expiry_date:off(4),status:'在庫',days_left:4},
-    {id:'d5',item_name:'雞胸肉',storage_zone:'cold',grid_index:4,expiry_date:off(1),status:'在庫',days_left:1},
+    {id:'d5',item_name:'雞胸肉',storage_zone:'cold',grid_index:4,expiry_date:off(1),status:'在庫',days_left:1,price:120},
     {id:'d6',item_name:'黃瓜',storage_zone:'cold',grid_index:5,expiry_date:off(8),status:'在庫',days_left:8},
-    {id:'d7',item_name:'緊肉片',storage_zone:'freeze',grid_index:0,expiry_date:off(25),status:'在庫',days_left:25},
+    {id:'d7',item_name:'緊肉片',storage_zone:'freeze',grid_index:0,expiry_date:off(25),status:'在庫',days_left:25,price:150},
     {id:'d8',item_name:'鮭魚',storage_zone:'freeze',grid_index:1,expiry_date:off(60),status:'在庫',days_left:60},
     {id:'d9',item_name:'蝴蝶麵',storage_zone:'freeze',grid_index:2,expiry_date:off(3),status:'在庫',days_left:3},
     {id:'d10',item_name:'香腸',storage_zone:'door',grid_index:0,expiry_date:off(10),status:'在庫',days_left:10},
